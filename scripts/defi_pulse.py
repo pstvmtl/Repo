@@ -528,6 +528,21 @@ def find_position_nft_mints(owner):
     return mints
 
 
+def all_solana_token_balances(owner):
+    """Every SPL/Token-2022 balance the wallet holds, including dust/spam tokens that
+    Zerion's `only_simple` listing filters out as trash — that's exactly where a
+    scam airdrop token sits, so the blocklist check needs to see these too."""
+    balances = []
+    for program in (TOKEN_PROGRAM, TOKEN_2022_PROGRAM):
+        for acct in get_token_accounts(owner, program):
+            info = acct["account"]["data"]["parsed"]["info"]
+            amt = info["tokenAmount"]
+            ui_amount = amt.get("uiAmount") or 0
+            if ui_amount > 0:
+                balances.append({"mint": info["mint"], "amount": ui_amount})
+    return balances
+
+
 def get_account_bytes(address):
     result = rpc_call("getAccountInfo", [address, {"encoding": "base64"}])
     if not result or not result.get("value"):
@@ -941,6 +956,34 @@ def screen_wallet_holdings(sol_simple_positions):
                     "severity": "high",
                     "message": f"Wallet holding {fi.get('symbol')} ({mint}, "
                     f"${value:,.2f} [Zerion]): {scam_msg}",
+                }
+            )
+
+    # Zerion's `only_simple` listing filters out tokens it treats as trash/spam — but a
+    # confirmed-scam airdrop token is exactly what gets filtered that way, so check the
+    # raw on-chain balances too (blocklist-only here; not worth a full Jupiter/RugCheck
+    # pass on every dust token, since only the known-bad list has zero false-positive cost).
+    zerion_seen_mints = set()
+    for p in sol_simple_positions:
+        fi = p["attributes"].get("fungible_info") or {}
+        impl = next((i for i in fi.get("implementations", []) if i.get("chain_id") == "solana"), None)
+        if impl and impl.get("address"):
+            zerion_seen_mints.add(impl["address"])
+    try:
+        raw_balances = all_solana_token_balances(SOL_WALLET)
+    except RuntimeError:
+        raw_balances = []
+    for bal in raw_balances:
+        if bal["mint"] in zerion_seen_mints:
+            continue  # already screened above
+        if bal["mint"] in KNOWN_SCAM_ADDRESSES:
+            flags.append(
+                {
+                    "severity": "high",
+                    "message": f"Wallet holding {bal['mint']} ({bal['amount']:g} units, "
+                    f"not shown by Zerion — likely filtered as spam): CONFIRMED SCAM "
+                    f"({KNOWN_SCAM_ADDRESSES[bal['mint']]}) — do not hold/trade "
+                    f"[Robinhood/Solana RPC direct token account scan].",
                 }
             )
     return flags
