@@ -27,7 +27,6 @@ ALCHEMY_SOLANA_RPC = os.environ.get(
     "https://solana-mainnet.g.alchemy.com/v2/" + os.environ.get("ALCHEMY_API_KEY", ""),
 )
 ROBINHOOD_RPC = os.environ.get("ROBINHOOD_RPC", "https://rpc.mainnet.chain.robinhood.com")
-BITQUERY_TOKEN = os.environ.get("BITQUERY_TOKEN")
 
 RAYDIUM_CLMM_PROGRAM = "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK"
 TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
