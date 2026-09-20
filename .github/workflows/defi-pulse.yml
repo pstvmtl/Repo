@@ -1,0 +1,50 @@
+name: DeFi Pulse Monitor
+
+on:
+  schedule:
+    # 9:00 AM, 1:00 PM, 6:00 PM EDT (UTC-4). GitHub Actions cron is always UTC,
+    # so these are 13:00 / 17:00 / 22:00 UTC. When US clocks fall back to EST
+    # (UTC-5) in November, these will fire an hour later local time — update
+    # the offsets below by +1 hour, or switch to EST, until DST resumes.
+    - cron: "0 13 * * *"
+    - cron: "0 17 * * *"
+    - cron: "0 22 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: defi-pulse-monitor
+  cancel-in-progress: false
+
+jobs:
+  pulse-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run DeFi Pulse check
+        env:
+          ZERION_API_KEY: ${{ secrets.ZERION_API_KEY }}
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+          GMAIL_SMTP_USER: ${{ secrets.GMAIL_SMTP_USER }}
+          GMAIL_SMTP_APP_PASSWORD: ${{ secrets.GMAIL_SMTP_APP_PASSWORD }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+        run: python scripts/defi_pulse.py
+
+      - name: Commit updated snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/last_snapshot.json
+          git diff --cached --quiet || git commit -m "chore: update DeFi Pulse snapshot [skip ci]"
+          git push
