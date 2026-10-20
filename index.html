@@ -172,6 +172,18 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 @media(max-width:520px){.rl{margin:10px 0 16px}.rl .trk{margin-top:6px;height:40px}}
 /* 2026-10-20 19:00 HORS PLAGE : décision / attente / échéance / moves, s'affiche tout seul dès qu'une position sort de sa plage */
 .hp{padding:4px 8px;border-color:var(--amb)!important;box-shadow:0 0 12px #fc03,inset 0 0 12px #fc01!important}
+.jr{border-bottom:1px dotted #0f63;padding:5px 0}.jr:last-of-type{border-bottom:none}
+.jr summary{cursor:pointer;list-style:none;display:flex;gap:6px;align-items:baseline;font-size:12.5px;color:#eafff1;line-height:1.45}.jr summary::-webkit-details-marker{display:none}
+.jr summary .pm{display:inline-block;width:18px;height:18px;line-height:16px;text-align:center;border:1px solid var(--g2);border-radius:4px;color:var(--g);font-weight:bold;flex:none}
+.jr[open] summary .pm::before{content:'−'}.jr:not([open]) summary .pm::before{content:'+'}
+.jr summary .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.jr summary .st{font-size:9.5px;border:1px solid currentColor;border-radius:3px;padding:0 4px;white-space:nowrap}
+.jr summary .pl{font-weight:bold;white-space:nowrap;text-align:right;min-width:92px}.jr .st.cl{color:var(--g)}.jr .st.op{color:#36c6ff}.jr .st.pd{color:var(--amb)}
+.jr .gr{display:grid;grid-template-columns:repeat(4,1fr);gap:2px 8px;font-size:9.5px;color:var(--dim);text-transform:uppercase;margin:4px 0 2px 24px}.jr .gr b{display:block;font-size:12.5px;color:#eafff1;text-transform:none}
+.jr .ln{font-size:11px;line-height:1.35;margin:2px 0 0 24px;color:#d9ffe6}.jr .ln i{font-style:normal;color:var(--dim);font-size:9.5px;text-transform:uppercase;margin-right:4px}
+.jh{display:grid;grid-template-columns:repeat(4,1fr);gap:4px 8px;font-size:9.5px;color:var(--dim);text-transform:uppercase}.jh b{display:block;font-size:16px;color:#eafff1;text-transform:none}
+.jo{font-size:11px;color:#d9ffe6;margin:5px 0 4px;line-height:1.45}.jgrp>summary{cursor:pointer;font-size:11px;color:var(--dim);margin:6px 0 2px;text-transform:uppercase;letter-spacing:.5px}
+.jbtn{background:#000c;color:var(--g);border:1px solid var(--g2);border-radius:4px;font:inherit;font-size:11px;padding:2px 8px;cursor:pointer}
+@media(max-width:520px){.jh,.jr .gr{grid-template-columns:repeat(2,1fr)}.jh b{font-size:14.5px}}
 .hpr{border-bottom:1px dotted #5a4a00;padding:7px 0}.hpr:last-of-type{border-bottom:none}
 .hpr .h1{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;align-items:baseline;font-weight:bold;font-size:13px;color:#eafff1}
 .hpr .sd{font-size:10px;border:1px solid currentColor;border-radius:3px;padding:0 4px;white-space:nowrap;color:var(--amb)}
@@ -191,6 +203,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 <div class="race" id="race"></div>
 <div class="top" id="top"></div>
 <div id="hpw" style="display:none"><div class="sec"><span>⚠ HORS PLAGE — décision · attente · échéance · prochains moves</span><span class="s" id="hpts"></span></div><div class="box hp" id="hp"></div></div>
+<div class="sec"><span>◇ JOURNAL / RÉALISÉ — chaque move : coût · gain · vs hold</span><span class="tog"><button class="jbtn" id="jall" onclick="jAll()">＋ tout</button></span></div><div class="box" id="jr"></div>
 <div class="sec"><span>◇ TOP 5 — positions qui rapportent le plus</span><span class="s" id="t5ts">tri : frais USD / jour · re-classé à chaque refresh</span></div><div class="box t5" id="t5"></div>
 <div class="sec"><span>◇ 24 H · TENDANCE</span><span class="s">anneau 24 h côté serveur</span></div><div class="spk" id="spk"></div>
 <div class="sec"><span>◇ LES PLUS SERRÉS (marge au kill doux, USD)</span><span class="s">🟢 &gt; 4 % de l'entrée · 🟠 2–4 % · 🔴 &lt; 2 % (= 4 / 2 $ sur un test de 100)</span></div><div class="tight" id="tight"></div>
@@ -203,7 +216,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.20-1905-352c';
+const APP_VER='2026.10.20-1925-7a7c';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -319,7 +332,7 @@ const K=kc(p);return`<div class="plot ${K} ${p.inrange===false?'oor':''} ${dange
 ${hp!=null&&!real?`<div class="bar h"><i style="width:${hp}%"></i></div><div class="lbl"><span>♥ santé · ${p.floor_hard!=null?`kill doux ${f(p.floor)} · dur ${f(p.floor_hard)}`:'kill à '+f(p.floor)}</span><span>${p.dist_kill_pct!=null?f(p.dist_kill_pct,1)+' % de marge':''}</span></div>`:''}
 <div class="bar"><i style="width:${growth}%"></i></div><div class="lbl"><span>🌾 récolte (frais / 1 % de la valeur)</span><span>${f(growth,0)} %</span></div>
 ${p.kill_confirm?`<div class="lbl"><span class="${p.kill_confirmed?'neg':p.kill_breach?'amb':''}">⏱ ${p.kill_confirm}</span><span>${p.dist_hard!=null?'marge dur '+f(p.dist_hard):''}</span></div>`:''}${rg}${spark(p.spark,real?null:p.floor)}${fresh(p)}
-<details><summary>détails & sources</summary>${p.floor_note||''}${p.value_note?'<br>valeur : '+p.value_note:''}${p.fees_note?'<br>frais : '+p.fees_note:''}<br>source : ${p.src_label} (maj ~toutes les ${cad(p.cadence_s)})</details></div>`}
+${jPlot(p)}<details><summary>détails & sources</summary>${p.floor_note||''}${p.value_note?'<br>valeur : '+p.value_note:''}${p.fees_note?'<br>frais : '+p.fees_note:''}<br>source : ${p.src_label} (maj ~toutes les ${cad(p.cadence_s)})</details></div>`}
 // v7 : avatars (assets/avatar_chaser.png, avatar_monee.png) ; si absents → bonshommes allumettes
 const AVSRC={ch:'assets/avatar_chaser.png',mo:'assets/avatar_monee.png'},AV={ch:false,mo:false};
 for(const k in AVSRC){const im=new Image();im.onload=()=>{AV[k]=true;if(D)render()};im.onerror=()=>{AV[k]=false};im.src=AVSRC[k]}
@@ -335,6 +348,36 @@ const ex=(T.excluded||[]);return(rows||'<div class="s">aucune position avec frai
 function esc(x){return String(x==null?'':x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function hpT(ms){if(!ms)return'—';const d=new Date(ms),n=new Date(),o={hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Toronto'};const s=d.toLocaleTimeString('fr-CA',o).replace(' h ',':');const sd=d.toLocaleDateString('fr-CA',{timeZone:'America/Toronto'})===n.toLocaleDateString('fr-CA',{timeZone:'America/Toronto'});return sd?s:d.toLocaleDateString('fr-CA',{day:'2-digit',month:'2-digit',timeZone:'America/Toronto'}).slice(-5).split('-').reverse().join('/')+' '+s}
 function hpDur(h){return h==null?'—':h<1?Math.round(h*60)+' min':h<48?f(h,1)+' h':f(h/24,1)+' j'}
+
+// 2026-10-20 19:55 JOURNAL / RÉALISÉ : registre ledger.py (fermés vérifiés + ouverts live) ; +/− par ligne et global
+let JALL=localStorage.getItem('jall')==='1';
+function jAll(){JALL=!JALL;localStorage.setItem('jall',JALL?'1':'0');document.querySelectorAll('#jr details.jr,#jr details.jgrp').forEach(d=>d.open=JALL);$('jall').textContent=JALL?'− tout':'＋ tout'}
+function jPlot(p){try{const r=((D.ledger||{}).rows||[]).find(x=>x.pid===p.id);if(!r)return'';const oc=r.open_costs||{};
+return`<details><summary>＋ journal : coût d'entrée ${f(oc.total,2)} $ · vs hold ${r.vs_hold==null?'—':f(r.vs_hold,2,true)+' $'}</summary>capital ${f(r.capital)} $ · ouvert ${hpT(r.open_ms)} (${jDur(r.days)}) · %/an ${r.apr==null?'—':f(r.apr,0)+' %'}<br>coût ouverture : ${esc(oc.txt||'—')}<br>frais encaissés ${f(r.fees_usd)} $ · P&L latent ${f(r.pnl,2,true)} $ · vs hold ${r.vs_hold==null?'—':f(r.vs_hold,2,true)+' $'} ${tg('HYPOTHÈSE')}<br>tx : ${(r.sigs||[]).filter(Boolean).map(x=>esc(x)+'…').join(' ')||'—'}</details>`}catch(e){return''}}
+function jDur(d){return d==null?'—':d<1?f(d*24,1)+' h':f(d,1)+' j'}
+function jRow(r,op){const st=r.status==='ouverte'?'op':r.status==='fermée'?'cl':'pd';const oc=r.open_costs||{},cc=r.close_costs||{};const col=r.owner==='Monee'?'var(--mo)':'var(--g)';
+const pl=r.pnl==null?'—':f(r.pnl,2,true)+' $';const pc=r.pnl_pct==null?'':' · '+f(r.pnl_pct,2,true)+' %';
+const sig=(r.sigs||[]).filter(Boolean).map(x=>esc(x)+'…').join(' ');const lat=r.status==='ouverte';
+return`<details class="jr" data-id="${esc(r.id)}"${op?' open':''}><summary><span class="pm"></span><span class="nm"><b>${esc(r.id)}</b> <small style="color:${col}">${esc(r.owner)} · ${esc(r.wallet)}</small> <small style="color:var(--dim)">${esc(r.pool||'')}</small></span><span class="st ${st}">${esc(r.status_note||r.status)}</span><span class="pl ${cls(r.pnl)}">${pl}<small style="font-weight:normal">${pc}</small>${tg(r.pnl_tag)}</span></summary>
+<div class="gr"><div>capital<b>${f(r.capital)} $</b></div><div>${lat?'valeur live':'produit'}<b>${f(lat?r.value:r.proceeds)} $</b></div><div>durée${r.open_approx?' ≈':''}<b>${jDur(r.days)}</b></div><div>%/an<b class="${cls(r.apr)}">${r.apr==null?'—':f(r.apr,0)+' %'}</b></div>
+<div>ouvert${r.open_approx?' ≈':''}<b>${hpT(r.open_ms)}</b></div><div>${lat?'P&L latent':'fermé'}<b>${lat?pl:hpT(r.close_ms)}</b></div><div>frais encaissés<b>${f(r.fees_usd)} $</b></div><div>vs hold 50/50<b class="${cls(r.vs_hold)}">${r.vs_hold==null?'—':f(r.vs_hold,2,true)+' $'}</b></div></div>
+<div class="ln"><i>coût ouverture</i>${f(oc.total,2)} $ · ${esc(oc.txt||'—')} ${tg(oc.tag)}${oc.note?' <span style="color:var(--dim)">('+esc(oc.note)+')</span>':''}</div>
+${lat?'':`<div class="ln"><i>coût fermeture</i>${cc.total==null?'—':f(cc.total,2)+' $ · '}${esc(cc.txt||'—')}${cc.note?' <span style="color:var(--dim)">('+esc(cc.note)+')</span>':''}</div>`}
+${r.proceeds_note||r.fees_note?`<div class="ln"><i>détail</i>${esc([r.proceeds_note,r.fees_note&&('frais : '+r.fees_note)].filter(Boolean).join(' · '))}</div>`:''}
+${r.vs_hold_note?`<div class="ln"><i>vs hold</i>${esc(r.vs_hold_note)} ${r.vs_hold_tag?tg(r.vs_hold_tag):''}</div>`:''}${r.pnl_note?`<div class="ln"><i>note</i>${esc(r.pnl_note)}</div>`:''}
+<div class="ln"><i>où va l'argent</i>${esc(r.dest||'—')}${r.redeployed===true?' · <b style="color:var(--g)">redéployé</b>':r.redeployed===false?' · <b style="color:var(--amb)">dort (pas redéployé)</b>':''}</div>
+${r.reason?`<div class="ln"><i>raison</i>${esc(r.reason)}</div>`:''}<div class="ln"><i>livre · tx</i>${esc(r.book)} · ${esc(r.platform||'')} · ${sig||'—'}${r.pnl_src?' · source : '+esc(r.pnl_src):''}</div></details>`}
+function jView(){const X=D.ledger;const el=$('jr');if(!el)return;if(!X||!X.rows){el.innerHTML='<div class="s">journal indisponible</div>';return}
+const opn=new Set([...document.querySelectorAll('#jr details.jr[open]')].map(d=>d.dataset.id));const g0=document.querySelector('#jr details.jgrp');const gOpen=g0?g0.open:JALL;
+const T=X.totals||{},PO=X.per_owner||{};const cl=X.rows.filter(r=>r.status!=='ouverte'),op=X.rows.filter(r=>r.status==='ouverte').sort((a,b)=>(b.pnl||0)-(a.pnl||0));
+const who=n=>{const p=PO[n]||{};return`<span style="color:${n==='Monee'?'var(--mo)':'var(--g)'}">${n}</span> réalisé <b class="${cls(p.realized_all)}">${f(p.realized_all,2,true)} $</b> (auj. ${f(p.realized_today,2,true)}) · latent ${f(p.unrealized,2,true)} · coûts ${f(p.costs)} · vs hold fermées ${f(p.vs_hold_closed,2,true)}`};
+el.innerHTML=`<div class="jh"><div>réalisé aujourd'hui<b class="${cls(T.realized_today)}">${f(T.realized_today,2,true)} $</b></div><div>réalisé depuis le 17 oct.<b class="${cls(T.realized_all)}">${f(T.realized_all,2,true)} $</b></div><div>coûts totaux (gaz + glissement)<b>${f(T.costs)} $</b></div><div>vs hold (fermées)<b class="${cls(T.vs_hold_closed)}">${f(T.vs_hold_closed,2,true)} $</b></div></div>
+<div class="jo">${who('Chaser')}<br>${who('Monee')}<br>latent des ${T.n_open} positions ouvertes : <b class="${cls(T.unrealized)}">${f(T.unrealized,2,true)} $</b> ${tg('HYPOTHÈSE')}${T.pending_unverified?` · fermées à vérifier ${f(T.pending_unverified,2,true)} $`:''}</div>
+<div class="ex2" style="font-size:10px;color:var(--dim);margin:0 0 3px">+ ouvre le détail (coûts, produit, vs hold, où va l'argent, tx) · ${T.n_closed} fermée(s)</div>
+${cl.map(r=>jRow(r,JALL||opn.has(String(r.id)))).join('')}
+<details class="jgrp"${gOpen?' open':''}><summary>▸ positions ouvertes · ${op.length} · latent ${f(T.unrealized,2,true)} $ · vs hold ${f(T.vs_hold_open,2,true)} $</summary>${op.map(r=>jRow(r,JALL||opn.has(String(r.id)))).join('')}</details>
+<div class="ex2" style="font-size:10px;color:var(--dim);margin-top:4px">${esc(X.rules||'')} · maj ${hpT(X.ts)}</div>`;
+$('jall').textContent=JALL?'− tout':'＋ tout'}
 function hpView(){const X=D.horsplage;const w=$('hpw');if(!w)return;if(!X||!(X.rows||[]).length){w.style.display='none';return}w.style.display='';const now=Date.now();
 const op=new Set([...document.querySelectorAll('#hp details[open]')].map(d=>d.dataset.id));const rows=X.rows.map(r=>{const dc=r.decision||'';const k=dc.startsWith('KILL')?'kl':dc.startsWith('SORTIR')?'ex':dc.startsWith('ATTENDRE')?'wt':'kp';const late=r.deadline&&r.deadline<now;
 return`<details class="hpr" data-id="${esc(r.id)}"${(X.rows.length<=2||op.has(String(r.id)))?' open':''}><summary><span class="dc ${k}">${esc(dc.split(' — ')[0])}</span> <b>${esc(r.name)}</b> <small style="color:${r.owner==='Monee'?'var(--mo)':'var(--g)'}">${esc(r.owner)}</small> <span class="sd">${r.side==='HAUT'?'▲':'▼'} ${hpDur((now-r.since)/3600e3)}</span> <small>→ ${hpT(r.deadline)}${late?' ⚠':''}</small> <span class="${cls(r.pnl)}" style="font-size:11px">${f(r.pnl,2,true)} $</span></summary><div class="h1"><span>${esc(r.name)} <small style="color:${r.owner==='Monee'?'var(--mo)':'var(--g)'}">· ${esc(r.owner)}</small>${tg(r.tag)}</span><span class="sd">${r.side==='HAUT'?'▲ HAUT':'▼ BAS'} · 100 % ${esc(r.held)}</span></div>
@@ -402,7 +445,7 @@ $('top').innerHTML=[
 ['Mode kill',`<span id="km" class="${until&&until>now?'amb':'neg'}" style="font-size:13px"></span>`,'jusqu\'à 17:10 Toronto : kills = alerte seule · crash/rug/dépeg ferment toujours','M']
 ].map(([k,v,s,g])=>`<div class="box"><div class="k">${k}${tg(g==='H'?'HYPOTHÈSE':'MESURÉ')}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`).join('');
 const PB={};(D.plots||[]).forEach(p=>PB[p.id]=p);$('tight').innerHTML=(D.tight||[]).map(x=>{const p=PB[x.id]||{dist_kill:x.dist,entry:100};return`<div class="${kc(p)}">${x.name.slice(0,26)}<b>${f(x.dist)} $</b>${x.pct!=null?f(x.pct,1)+' %':''}${p.floor!=null?' · plancher '+f(p.floor):''}${kmBar(p,1)}</div>`}).join('')||'—';
-try{hpView()}catch(e){}$('spk').innerHTML=spkView();$('t5').innerHTML=t5View();$('t5ts').textContent='tri : frais USD / jour · re-classé '+tT(D.server_ts,1);
+try{hpView()}catch(e){}try{jView()}catch(e){}$('spk').innerHTML=spkView();$('t5').innerHTML=t5View();$('t5ts').textContent='tri : frais USD / jour · re-classé '+tT(D.server_ts,1);
 $('t1').className=SORT==='book'?'on':'';$('t2').className=SORT==='kill'?'on':'';
 if(SORT==='kill'){const ps=[...D.plots].sort((a,b)=>(a.kill_kind==='réalisé')-(b.kill_kind==='réalisé')||(a.dist_kill??1e9)-(b.dist_kill??1e9));$('plots').innerHTML=`<div class="plots">${ps.map(plot).join('')}</div>`}
 else{const groups={};D.plots.forEach(p=>(groups[p.group]=groups[p.group]||[]).push(p));
