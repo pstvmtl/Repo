@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chaser HUD">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<title>Chaser HUD</title>
+<style>html,body{margin:0;height:100%;background:#000;color:#00ff66;font:15px/1.5 ui-monospace,Menlo,monospace}
+main{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:0 24px}
+a{color:#00e5ff}small{color:#0a6}</style></head>
+<body><main><div>CHASER · connexion au HUD…</div><small id="s"></small><p id="l"></p></main>
+<script>
+// Adresse stable du HUD. Ce fichier ne contient AUCUN secret : le jeton est dans le fragment (#…),
+// que le navigateur n'envoie jamais au serveur. L'URL courante du tunnel vient du pointeur pointer.json
+// (même dossier), réécrit par la box à chaque changement de tunnel.
+(function(){
+  var s=document.getElementById('s'), l=document.getElementById('l');
+  var tok=(location.hash||'').replace(/^#/,'');
+  try{ if(tok) localStorage.setItem('hud_tok',tok); else tok=localStorage.getItem('hud_tok')||''; }catch(e){}
+  if(!/^[A-Za-z0-9_-]{20,}$/.test(tok)){ s.textContent='Jeton absent : ouvre le lien complet (avec #) une fois.'; return; }
+  var POINTERS=['pointer.json'];
+  function go(o,src){ try{localStorage.setItem('hud_origin',o);}catch(e){}
+    var u=o.replace(/\/+$/,'')+'/t/'+tok+'/'; s.textContent='→ '+o.replace(/^https:\/\//,'')+' ('+src+')';
+    l.innerHTML='<a href="'+u+'">Ouvrir le HUD</a>'; location.replace(u); }
+  function next(i){
+    if(i>=POINTERS.length){ var c=null; try{c=localStorage.getItem('hud_origin');}catch(e){}
+      if(c) return go(c,'dernière adresse connue'); s.textContent='Pointeur injoignable, réessaie dans 1 min.'; return; }
+    fetch(POINTERS[i]+(POINTERS[i].indexOf('?')<0?'?':'&')+'n='+Date.now(),{cache:'no-store'})
+      .then(function(r){return r.json();})
+      .then(function(j){ if(j&&/^https:\/\/[a-z0-9.-]+$/.test(j.origin||'')) go(j.origin,'pointeur '+(j.ts||'')); else next(i+1); })
+      .catch(function(){ next(i+1); });
+  }
+  next(0);
+})();
+</script></body></html>
