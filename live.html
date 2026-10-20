@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chaser HUD">
+<meta name="theme-color" content="#000000">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<title>Chaser HUD</title>
+<style>
+html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;color:#00ff66;font:15px/1.5 ui-monospace,Menlo,monospace}
+#hud{position:fixed;top:env(safe-area-inset-top);left:env(safe-area-inset-left);right:env(safe-area-inset-right);bottom:env(safe-area-inset-bottom);
+  width:calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));height:calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));border:0;margin:0;padding:0;background:#000;display:block}
+#ov{position:fixed;inset:0;z-index:10;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .4s}
+#ov.off{opacity:0;pointer-events:none}
+#ov canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+#box{position:relative;text-align:center;padding:18px 22px;border:1px solid #00ff6655;background:#000c;box-shadow:0 0 24px #00ff6633;max-width:86vw}
+#t{font-size:17px;letter-spacing:.12em;text-shadow:0 0 8px #00ff66}
+#s{color:#0a6;font-size:12px;margin-top:6px;min-height:1.4em}
+#t:after{content:'▌';animation:b 1s steps(1) infinite}@keyframes b{50%{opacity:0}}
+#x{position:fixed;z-index:11;top:calc(env(safe-area-inset-top) + 6px);right:calc(env(safe-area-inset-right) + 8px);width:46px;height:46px;border-radius:10px;
+  background:#200;border:1px solid #f33;color:#f55;font-size:22px;display:none}
+#ov:not(.off) ~ #x{display:block}
+</style></head>
+<body><iframe id="hud" title="Chaser HUD" allow="clipboard-write" referrerpolicy="no-referrer"></iframe>
+<div id="ov"><canvas id="rain"></canvas><div id="box"><div id="t">CHASER · reconnexion…</div><div id="s"></div></div></div>
+<button id="x" type="button" aria-label="Fermer" onclick="closeAll()">✕</button>
+<script>
+// Enveloppe stable du HUD (aucun secret ici : le jeton vient du fragment #…, jamais envoyé au serveur).
+// Garde la page et affiche le HUD du tunnel dans une iframe ; suit pointer.json (réécrit par la box à chaque
+// rotation de tunnel) toutes les 15 s + au retour au premier plan, vérifie la santé, et rebascule tout seul.
+(function(){
+  var ov=document.getElementById('ov'), s=document.getElementById('s'), fr=document.getElementById('hud');
+  // pluie Matrix de l'écran de reconnexion
+  var cv=document.getElementById('rain'), cx=cv.getContext('2d'), cols=[], CH='ｱｲｳｴｵｶｷｸｹｺ0123456789ZECSOL$';
+  function rs(){cv.width=innerWidth;cv.height=innerHeight;cols=Array(Math.ceil(innerWidth/14)).fill(0).map(function(){return Math.random()*-50})}
+  rs(); addEventListener('resize',rs);
+  setInterval(function(){ if(ov.classList.contains('off')) return; cx.fillStyle='rgba(0,0,0,.12)';cx.fillRect(0,0,cv.width,cv.height);
+    cx.fillStyle='#00ff66';cx.font='14px monospace';
+    for(var i=0;i<cols.length;i++){cx.fillText(CH[Math.floor(Math.random()*CH.length)],i*14,cols[i]*14);
+      if(cols[i]*14>cv.height&&Math.random()>.97)cols[i]=0;cols[i]++;}},60);
+
+  var tok=(location.hash||'').replace(/^#/,'');
+  try{ if(tok) localStorage.setItem('hud_tok',tok); else tok=localStorage.getItem('hud_tok')||''; }catch(e){}
+  if(!/^[A-Za-z0-9_-]{20,}$/.test(tok)){ s.textContent='Jeton absent : ouvre le lien complet (avec #) une fois.'; return; }
+  var RX=/^https:\/\/[a-z0-9.-]+$/, cur=null, lastBeat=0, loadedAt=0, fails=0, timer=null, busy=false;
+  function show(msg){ s.textContent=msg||''; ov.classList.remove('off'); }
+  function hide(){ ov.classList.add('off'); }
+  function setOrigin(o,why){
+    cur=o; lastBeat=0; fails=0; loadedAt=Date.now();
+    try{localStorage.setItem('hud_origin',o);}catch(e){}
+    show('→ '+o.replace(/^https:\/\//,'')+' ('+why+')');
+    var u=o+'/t/'+tok+'/matrix'; fr.setAttribute('data-o',o);
+    // replace() : pas de nouvelle entrée d'historique à chaque bascule (sinon ✕ → retour dans l'iframe)
+    try{ if(fr.getAttribute('src')){ fr.contentWindow.location.replace(u); return; } }catch(e){}
+    fr.src=u;
+  }
+  addEventListener('message',function(e){
+    if(!cur||e.origin!==cur||e.source!==fr.contentWindow) return;
+    if(e.data==='hud-alive'){ lastBeat=Date.now(); if(fails<2) hide(); }
+    else if(e.data==='hud-close') closeAll();
+  });
+  window.closeAll=function(){ try{window.close();}catch(e){}
+    setTimeout(function(){ if(document.visibilityState==='hidden') return;
+      if(history.length>1) history.back(); else location.replace('about:blank'); },300); };
+  function tfetch(u,ms,opt){ var c=('AbortController' in window)?new AbortController():null, t=setTimeout(function(){c&&c.abort();},ms);
+    opt=opt||{}; if(c) opt.signal=c.signal; return fetch(u,opt).finally(function(){clearTimeout(t);}); }
+  function pointer(){
+    return tfetch('pointer.json?n='+Date.now(),8000,{cache:'no-store'}).then(function(r){return r.json();})
+      .then(function(j){ return (j&&RX.test(j.origin||''))?j.origin:null; }).catch(function(){ return null; });
+  }
+  function health(o){
+    return tfetch(o+'/t/'+tok+'/healthz?n='+Date.now(),8000,{cache:'no-store',mode:'cors',credentials:'omit'})
+      .then(function(r){ return r.ok?r.json():null; }).then(function(j){ return !!(j&&j.ok); }).catch(function(){ return false; });
+  }
+  function sched(ms){ clearTimeout(timer); timer=setTimeout(tick,ms); }
+  function tick(){
+    if(busy) return; busy=true;
+    pointer().then(function(o){
+      if(!o && !cur){ var c=null; try{c=localStorage.getItem('hud_origin');}catch(e){} if(c&&RX.test(c)) o=c; }
+      if(o && o!==cur){ setOrigin(o, cur?'nouvelle adresse':'pointeur'); return true; }
+      if(!cur){ show('Pointeur injoignable, nouvel essai…'); return false; }
+      return health(cur).then(function(ok){
+        if(ok){ fails=0; if(Date.now()-lastBeat<=25000) hide();
+          // santé OK mais aucune page vivante dans l'iframe (ex. 404 tunnel chargé pendant la panne) → recharge
+          if(Date.now()-lastBeat>25000 && Date.now()-loadedAt>12000){ setOrigin(cur,'rechargement'); }
+          return true; }
+        fails++; if(fails>=2||!lastBeat) show('Tunnel injoignable — reconnexion… (essai '+fails+')');
+        return false;
+      });
+    }).then(function(ok){ busy=false; sched(ok&&!ov.classList.contains('off')?5000:(ok?15000:5000)); },
+             function(){ busy=false; sched(5000); });
+  }
+  function kick(){ if(!document.hidden){ sched(0); } }
+  document.addEventListener('visibilitychange',kick); addEventListener('focus',kick); addEventListener('online',kick); addEventListener('pageshow',kick);
+  show(''); tick();
+})();
+</script></body></html>
