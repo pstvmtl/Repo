@@ -170,6 +170,17 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 .trk .rn:has(img.av) .cr{top:50%;left:auto;right:-15px;transform:translateY(-50%);font-size:11px}
 .rl .trk{margin-top:4px}
 @media(max-width:520px){.rl{margin:10px 0 16px}.rl .trk{margin-top:6px;height:40px}}
+/* 2026-10-20 19:00 HORS PLAGE : décision / attente / échéance / moves, s'affiche tout seul dès qu'une position sort de sa plage */
+.hp{padding:4px 8px;border-color:var(--amb)!important;box-shadow:0 0 12px #fc03,inset 0 0 12px #fc01!important}
+.hpr{border-bottom:1px dotted #5a4a00;padding:7px 0}.hpr:last-of-type{border-bottom:none}
+.hpr .h1{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;align-items:baseline;font-weight:bold;font-size:13px;color:#eafff1}
+.hpr .sd{font-size:10px;border:1px solid currentColor;border-radius:3px;padding:0 4px;white-space:nowrap;color:var(--amb)}
+.hpr .dc{display:inline-block;margin:4px 0 2px;padding:2px 7px;border-radius:4px;font-weight:bold;font-size:12.5px;letter-spacing:.5px;background:#000c}
+.hpr .dc.ex{color:#000;background:var(--g);text-shadow:none}.hpr .dc.wt{color:var(--amb);border:1px solid var(--amb)}.hpr .dc.kp{color:var(--mo);border:1px solid var(--mo)}.hpr .dc.kl{color:#fff;background:var(--red);text-shadow:none}
+.hpr .gr{display:grid;grid-template-columns:repeat(4,1fr);gap:2px 8px;font-size:9.5px;color:var(--dim);text-transform:uppercase;margin:3px 0}.hpr .gr b{display:block;font-size:14px;color:#eafff1;text-transform:none}
+.hpr .ln{font-size:11.5px;line-height:1.35;margin-top:2px;color:#d9ffe6}.hpr .ln i{font-style:normal;color:var(--dim);font-size:9.5px;text-transform:uppercase;margin-right:4px}
+.hpr ol{margin:2px 0 0;padding-left:16px;font-size:11.5px;line-height:1.35;color:#d9ffe6}.hp .ex2{font-size:10px;color:var(--dim);margin-top:4px}
+@media(max-width:520px){.hpr .gr{grid-template-columns:repeat(2,1fr)}}
 </style></head><body><canvas id="rain"></canvas><button id="xclose" type="button" aria-label="Fermer la page" title="Fermer" onclick="closePage()">✕</button><main>
 <header><h1><i class="live"></i><span id="ttl">▓ CHASER · MATRIX FARM</span><small id="clock">connexion…</small></h1>
 <div><a id="bur" href="bureau" style="display:inline-block;margin-right:6px;padding:4px 8px;border:1px solid var(--g3);border-radius:6px;color:var(--g);text-decoration:none;font-size:11px">▣ BUREAU 3D</a><button id="rf" onclick="refresh()">⟳ REFRESH</button><div id="rfi">—</div></div><div class="sb" id="sb"></div></header>
@@ -178,6 +189,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 <div class="sec"><span>◇ COURSE CHASER vs MONEE (MOLLY) · base 1 000 · premier à +100 $ net</span><span id="racets"></span></div>
 <div class="race" id="race"></div>
 <div class="top" id="top"></div>
+<div id="hpw" style="display:none"><div class="sec"><span>⚠ HORS PLAGE — décision · attente · échéance · prochains moves</span><span class="s" id="hpts"></span></div><div class="box hp" id="hp"></div></div>
 <div class="sec"><span>◇ TOP 5 — positions qui rapportent le plus</span><span class="s" id="t5ts">tri : frais USD / jour · re-classé à chaque refresh</span></div><div class="box t5" id="t5"></div>
 <div class="sec"><span>◇ 24 H · TENDANCE</span><span class="s">anneau 24 h côté serveur</span></div><div class="spk" id="spk"></div>
 <div class="sec"><span>◇ LES PLUS SERRÉS (marge au kill doux, USD)</span><span class="s">🟢 &gt; 4 % de l'entrée · 🟠 2–4 % · 🔴 &lt; 2 % (= 4 / 2 $ sur un test de 100)</span></div><div class="tight" id="tight"></div>
@@ -190,7 +202,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.20-1849-730d';
+const APP_VER='2026.10.20-1903-fd44';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -319,6 +331,20 @@ function t5View(){const T=D.top5;if(!T)return'<div class="s">TOP 5 indisponible<
 const rows=(T.rows||[]).map((r,i)=>`<div class="t5r"><div class="rk">${i+1}</div><div class="nmr"><span>${r.name}${tg(r.tag)}</span><span><span class="ir ${r.inrange===false?'n':'y'}">${r.inrange===false?'HORS PLAGE':r.inrange?'DANS LA PLAGE':'—'}</span></span></div>
 <div class="cs"><div>frais / jour<b class="fd">${f(r.fees_day,2)} $</b></div><div>frais cumulés<b>${f(r.fees,2)} $</b></div><div>P&amp;L net vs entrée<b class="${cls(r.pnl)}">${f(r.pnl,2,true)} $</b></div><div>livre<b style="font-size:10.5px;color:var(--dim)">${r.group}</b></div></div></div>`).join('');
 const ex=(T.excluded||[]);return(rows||'<div class="s">aucune position avec frais mesurés</div>')+`<div class="ex">${T.ranked} position(s) classée(s) · frais/jour = frais cumulés ÷ âge (MES si date d'ouverture réelle, HYP si âge = 1re observation HUD ou base de course non publiée) ; sans date d'ouverture : vitesse observée ≥ 1 h.${ex.length?`<details><summary>${ex.length} exclue(s) (pas de frais/jour fiable)</summary>${ex.join('<br>')}</details>`:''}<details><summary>méthode par ligne</summary>${(T.rows||[]).map(r=>`${r.name} : ${r.how}`).join('<br>')}</details></div>`}
+function esc(x){return String(x==null?'':x).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function hpT(ms){if(!ms)return'—';const d=new Date(ms),n=new Date(),o={hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Toronto'};const s=d.toLocaleTimeString('fr-CA',o).replace(' h ',':');const sd=d.toLocaleDateString('fr-CA',{timeZone:'America/Toronto'})===n.toLocaleDateString('fr-CA',{timeZone:'America/Toronto'});return sd?s:d.toLocaleDateString('fr-CA',{day:'2-digit',month:'2-digit',timeZone:'America/Toronto'}).slice(-5).split('-').reverse().join('/')+' '+s}
+function hpDur(h){return h==null?'—':h<1?Math.round(h*60)+' min':h<48?f(h,1)+' h':f(h/24,1)+' j'}
+function hpView(){const X=D.horsplage;const w=$('hpw');if(!w)return;if(!X||!(X.rows||[]).length){w.style.display='none';return}w.style.display='';const now=Date.now();
+const rows=X.rows.map(r=>{const dc=r.decision||'';const k=dc.startsWith('KILL')?'kl':dc.startsWith('SORTIR')?'ex':dc.startsWith('ATTENDRE')?'wt':'kp';const late=r.deadline&&r.deadline<now;
+return`<div class="hpr"><div class="h1"><span>${esc(r.name)} <small style="color:${r.owner==='Monee'?'var(--mo)':'var(--g)'}">· ${esc(r.owner)}</small>${tg(r.tag)}</span><span class="sd">${r.side==='HAUT'?'▲ HAUT':'▼ BAS'} · 100 % ${esc(r.held)}</span></div>
+<span class="dc ${k}">${esc(dc)}</span>
+<div class="gr"><div>hors plage depuis<b>${hpDur((now-r.since)/3600e3)}</b></div><div>échéance<b class="${late?'neg':''}">${hpT(r.deadline)}${late?' ⚠':''}</b></div><div>P&amp;L vs entrée<b class="${cls(r.pnl)}">${f(r.pnl,2,true)} $${r.pnl_pct!=null?` <small>${f(r.pnl_pct,1,true)} %</small>`:''}</b></div><div>vs garder jetons<b class="${cls(r.lp_vs_hold)}">${r.lp_vs_hold!=null?f(r.lp_vs_hold,2,true)+' $':'—'}</b></div></div>
+<div class="ln"><i>on attend</i>${esc(r.wait)}</div>
+<div class="ln"><i>moves</i></div><ol>${(r.moves||[]).map(m=>`<li>${esc(String(m).replace(/^\d\)\s*/,''))}</li>`).join('')}</ol>
+<div class="ln"><i>qui · comment</i>${esc(r.how)}</div></div>`}).join('');
+const ed=(X.edge||[]).map(e=>`${esc(e.name)} (${esc(e.owner)}) à ${f(e.dist_pct,2)} % du bord ${e.side}`).join(' · ');
+$('hp').innerHTML=rows+`<div class="ex2">${X.rows.length} position(s) hors plage · prix vs bornes on-chain · ${esc(X.rules||'')}${ed?`<br>⚠ au bord : ${ed}`:''}</div>`;
+$('hpts').textContent='mis à jour '+hpT(X.ts)}
 let D=null,SORT=localStorage.getItem('mxsort')||'book',lastRefresh=null,inflight=false;
 function setSort(s){SORT=s;localStorage.setItem('mxsort',s);render()}
 function raceView(r){const ch=r.chaser,mo=r.monee,tgt=r.target||100,base=r.base||1000,L=r.labels||['CHASER','MONEE'];
@@ -375,7 +401,7 @@ $('top').innerHTML=[
 ['Mode kill',`<span id="km" class="${until&&until>now?'amb':'neg'}" style="font-size:13px"></span>`,'jusqu\'à 17:10 Toronto : kills = alerte seule · crash/rug/dépeg ferment toujours','M']
 ].map(([k,v,s,g])=>`<div class="box"><div class="k">${k}${tg(g==='H'?'HYPOTHÈSE':'MESURÉ')}</div><div class="v">${v}</div><div class="s">${s||''}</div></div>`).join('');
 const PB={};(D.plots||[]).forEach(p=>PB[p.id]=p);$('tight').innerHTML=(D.tight||[]).map(x=>{const p=PB[x.id]||{dist_kill:x.dist,entry:100};return`<div class="${kc(p)}">${x.name.slice(0,26)}<b>${f(x.dist)} $</b>${x.pct!=null?f(x.pct,1)+' %':''}${p.floor!=null?' · plancher '+f(p.floor):''}${kmBar(p,1)}</div>`}).join('')||'—';
-$('spk').innerHTML=spkView();$('t5').innerHTML=t5View();$('t5ts').textContent='tri : frais USD / jour · re-classé '+tT(D.server_ts,1);
+try{hpView()}catch(e){}$('spk').innerHTML=spkView();$('t5').innerHTML=t5View();$('t5ts').textContent='tri : frais USD / jour · re-classé '+tT(D.server_ts,1);
 $('t1').className=SORT==='book'?'on':'';$('t2').className=SORT==='kill'?'on':'';
 if(SORT==='kill'){const ps=[...D.plots].sort((a,b)=>(a.kill_kind==='réalisé')-(b.kill_kind==='réalisé')||(a.dist_kill??1e9)-(b.dist_kill??1e9));$('plots').innerHTML=`<div class="plots">${ps.map(plot).join('')}</div>`}
 else{const groups={};D.plots.forEach(p=>(groups[p.group]=groups[p.group]||[]).push(p));
