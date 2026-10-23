@@ -216,7 +216,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.23-1706-601a';
+const APP_VER='2026.10.23-1708-b8d4';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -332,9 +332,7 @@ ${hp!=null&&!real?`<div class="bar h"><i style="width:${hp}%"></i></div><div cla
 <div class="bar"><i style="width:${growth}%"></i></div><div class="lbl"><span>🌾 récolte (frais / 1 % de la valeur)</span><span>${f(growth,0)} %</span></div>
 ${p.kill_confirm?`<div class="lbl"><span class="${p.kill_confirmed?'neg':p.kill_breach?'amb':''}">⏱ ${p.kill_confirm}</span><span>${p.dist_hard!=null?'marge dur '+f(p.dist_hard):''}</span></div>`:''}${rg}${spark(p.spark,real?null:p.floor)}${fresh(p)}
 ${jPlot(p)}<details><summary>détails & sources</summary>${p.floor_note||''}${p.value_note?'<br>valeur : '+p.value_note:''}${p.fees_note?'<br>frais : '+p.fees_note:''}<br>source : ${p.src_label} (maj ~toutes les ${cad(p.cadence_s)})</details></div>`}
-// v7 : avatars (assets/avatar_chaser.png, avatar_monee.png) ; si absents → bonshommes allumettes
-const AVSRC={ch:'assets/avatar_chaser.png',mo:'assets/avatar_monee.png'},AV={ch:false,mo:false};
-for(const k in AVSRC){const im=new Image();im.onload=()=>{AV[k]=true;if(D)render()};im.onerror=()=>{AV[k]=false};im.src=AVSRC[k]}
+// v8 2026-10-23 : course/avatars retirés — panneau OBJECTIF
 // v7 : bouton ✕ — window.close(), sinon retour arrière, sinon about:blank
 // 2026-10-20 (iframe) : dans l'enveloppe GitHub Pages, le ✕ et un battement « hud-alive » passent au parent
 const INFRAME=(()=>{try{return window.top!==window.self}catch(e){return true}})();
