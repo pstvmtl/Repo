@@ -199,7 +199,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 <div><a id="bur" href="bureau" style="display:inline-block;margin-right:6px;padding:4px 8px;border:1px solid var(--g3);border-radius:6px;color:var(--g);text-decoration:none;font-size:11px">▣ BUREAU 3D</a><button id="rf" onclick="refresh()">⟳ REFRESH</button><div id="rfi">—</div></div><div class="sb" id="sb"></div></header>
 <div class="chips" id="chips"></div><div class="hexs" id="hexs" aria-hidden="true"></div>
 <div class="warn" id="warn"></div>
-<div class="sec"><span>◇ COURSE CHASER vs MONEE (MOLLY) · base 1 000 · premier à +100 $ net</span><span id="racets"></span></div>
+<div class="sec"><span>◇ OBJECTIF · P&amp;L vs capital net → 0 puis +</span><span id="racets"></span></div>
 <div class="race" id="race"></div>
 <div class="top" id="top"></div>
 <div id="hpw" style="display:none"><div class="sec"><span>⚠ HORS PLAGE — décision · attente · échéance · prochains moves</span><span class="s" id="hpts"></span></div><div class="box hp" id="hp"></div></div>
@@ -216,7 +216,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.20-1925-7a7c';
+const APP_VER='2026.10.23-1706-601a';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -312,10 +312,9 @@ function spkView(){const ph=(D.pnl_hist||[]).filter(r=>r.pnl!=null).sort((a,b)=>
 const d24=pts.length>1?pts[pts.length-1][1]-pts[0][1]:null,col=d24==null||d24>=0?'#00ff66':'#ff4545';
 const b1=`<div class="box"><div class="k">P&amp;L DeFi 24 h (officiel)${tg('HYPOTHÈSE')}</div><div class="v"><span class="${cls(t.pnl)}">${f(t.pnl,2,true)}</span> <span class="s">${d24!=null?'Δ '+f(d24,2,true)+' sur '+f((pts[pts.length-1][0]-pts[0][0])/3600e3,1)+' h':''}</span></div>
 ${pts.length>1?nspark([{pts,col,fill:1}]):`<div class="s">anneau en remplissage : ${pts.length} point(s), 1 par passe defi_total (10 min) — courbe dès 2 points</div>`}<div class="s">même source et même étiquette que la case TOTAL DeFi (defi_total.py) · ${pts.length} pts${outl.length?` · ${outl.length} lecture(s) partielle(s) exclue(s) de la courbe (un livre non lu : chute > 300 $ annulée au relevé suivant, ex. ${outl.map(p=>tT(p[0])+' '+f(p[1],0)).slice(-2).join(', ')})`:''}</div></div>`;
-const rh=D.race_hist24||D.race_hist||{},lc=rh['race.chaser']||[],lm=rh['race.monee']||[];
-const oc=ph.filter(r=>r.ch!=null).map(r=>[r.t,r.ch-1000]),om=ph.filter(r=>r.mo!=null).map(r=>[r.t,r.mo-1000]);
-const r=t.race||{};const b2=`<div class="box"><div class="k">Course 24 h · <span style="color:var(--g)">Chaser</span> vs <span style="color:var(--mo)">Monee</span>${tg('HYPOTHÈSE')}</div><div class="v" style="font-size:15px"><span style="color:var(--g)">${f(r.chaser,2,true)}</span> · <span style="color:var(--mo)">${f(r.monee,2,true)}</span> <span class="s">Δ ${f(r.lead,2,true)}</span></div>
-${nspark([{pts:lc,col:'#00ff66'},{pts:lm,col:'#36c6ff'}],[{pts:oc,col:'#00ff66'},{pts:om,col:'#36c6ff'}],0)||'<div class="s">pas encore d\'historique</div>'}<div class="s">ligne = live 30 s (collecteur) · ○ = officiel defi_total · pointillé = départ 1 000</div></div>`;
+const o=t.objective||{};const gap0=o.gap_to_zero,sur=o.surplus;
+const b2=`<div class="box"><div class="k">OBJECTIF · écart jusqu'à 0 ${tg('MESURÉ')}</div><div class="v"><span class="${cls(-(gap0||0))}">${gap0!=null&&gap0>0?('reste '+f(gap0)+' $ pour P&amp;L = 0'):(sur!=null&&sur>0?('+'+f(sur)+' $ au-dessus de 0'):'P&amp;L = 0')}</span></div>
+<div class="s">capital net ${f(o.capital)} · total on-chain ${f(o.total)} · P&amp;L ${f(o.pnl,2,true)} $ (${f(o.pnl_pct,2,true)} %) · source defi_total</div></div>`;
 return b1+b2}
 function crop(p){if(p.dist_kill!=null&&p.dist_kill<1)return'☠';if(p.inrange===false)return'🥀';const r=p.fees&&p.value?p.fees/p.value*100:0;return r>0.5?'🌾':r>0.1?'🌿':'🌱'}
 function fresh(p){return`<div class="fr" data-upd="${p.updated||''}" data-st="${p.stale_after_s}" data-lab="${p.src_label}" data-cad="${p.cadence_s}"></div>`}
@@ -391,54 +390,51 @@ $('hp').innerHTML=`<div class="ex2" style="margin:0 0 3px">touche une ligne pour
 $('hpts').textContent='mis à jour '+hpT(X.ts)}
 let D=null,SORT=localStorage.getItem('mxsort')||'book',lastRefresh=null,inflight=false;
 function setSort(s){SORT=s;localStorage.setItem('mxsort',s);render()}
-function raceView(r){const ch=r.chaser,mo=r.monee,tgt=r.target||100,base=r.base||1000,L=r.labels||['CHASER','MONEE'];
-const ok=v=>v!=null&&isFinite(v);const vs=[ch,mo].filter(ok);
-const lo=Math.min(-50,vs.length?Math.floor(Math.min(...vs)/25)*25:-50),hi=tgt,X=v=>Math.max(0,Math.min(100,(v-lo)/(hi-lo)*100)),z=X(0);
-const lead=ok(ch)&&ok(mo)?ch-mo:null,lw=lead==null||Math.abs(lead)<0.005?-1:lead>0?0:1;
-const runner=(c)=>AV[c]?`<img class="av" src="${AVSRC[c]}" alt="">`:`<svg viewBox="0 0 24 30"><g class="bd"><circle cx="15" cy="4.5" r="3.4"/><path d="M14 9 L12 17"/><path class="a1" d="M13.5 10.5 L8 14"/><path class="a2" d="M13.5 10.5 L19 13"/><path class="l1" d="M12 17 L7 27"/><path class="l2" d="M12 17 L17 27"/></g></svg>`;
-const lane=(i,v,c,sub)=>{const has=ok(v),x=has?X(v):z,a=Math.min(z,x),w=Math.abs(x-z),pc=has?Math.max(0,Math.min(100,v/tgt*100)):null;
-return`<div class="rl ${c}"><div class="who">${lw===i?'👑 ':''}${L[i]}<small>${sub} · ${has?f(base+v)+' $':'—'}</small></div>
-<div class="trk"><div class="grid"></div><div class="z" style="left:${z}%"></div><div class="fn"></div>${has?`<div class="tr ${v<0?'ng':''}" style="left:${a}%;width:${w}%"></div>`:''}
-<div class="rn ${has?'':'idle'}" style="left:${x}%">${lw===i?'<span class="cr">👑</span>':''}${runner(c)}</div></div>
-<div class="sc ${has&&v<0?'ng':''}">${has?f(v,2,true)+' $':'—'}<small>${has?f(pc,0)+' % du 🏁 · reste '+f(tgt-v)+' $':'donnée manquante'}</small></div></div>`};
-const tk=[lo,0,50,tgt].filter((v,i,a)=>a.indexOf(v)===i&&v>=lo&&v<=tgt);
-const ticks=`<div class="rl tkr" style="margin:-8px 0 0"><div></div><div class="tks">${tk.map(v=>`<span style="left:${X(v)}%">${v===0?'départ 1 000':v===tgt?'🏁 +'+tgt:(v>0?'+':'−')+Math.abs(v)}</span>`).join('')}</div><div></div></div>`;
-const gc=lw<0?'#fff':lw===0?'var(--g)':'var(--mo)',top=vs.length?Math.max(...vs):null;
-const gap=`<div class="rgap"><div class="pg">${L[0]} : ${ok(ch)?f(Math.max(0,ch/tgt*100),0)+' %':'—'} de l'objectif</div><div class="gp" style="color:${gc}"><i>ÉCART ${tg('HYPOTHÈSE')}</i><b>${lead==null?'—':(lw<0?'= ':lw===0?'◀ ':'▶ ')+f(Math.abs(lead))+' $'}</b><i>${lead==null?'en attente':lw<0?'ÉGALITÉ':L[lw]+' MÈNE'} · leader à ${top==null?'—':f(Math.max(0,tgt-top))+' $'} du 🏁</i></div><div class="pg">${L[1]} : ${ok(mo)?f(Math.max(0,mo/tgt*100),0)+' %':'—'} de l'objectif</div></div>`;
-// historique : registre horaire (book_race.jsonl) + live 30 s
-const bk=(r.book||[]).map(x=>[x[0],x[1]-1000,x[2]-1000]);const lh=D.race_hist||{};const lc=lh['race.chaser']||[],lm=lh['race.monee']||[];
-const t0=Date.now()-36*3600e3;const bc=bk.filter(x=>x[0]>=t0);
-const all=[...bc.map(x=>x[0]),...lc.map(x=>x[0])];let svg='';
-if(all.length>1){const x0=Math.min(...all),x1=Math.max(...all),vals=[...bc.flatMap(x=>[x[1],x[2]]),...lc.map(x=>x[1]),...lm.map(x=>x[1]),0];let a=Math.min(...vals),b=Math.max(...vals);if(b-a<2){b+=1;a-=1}
-const W=600,Hh=70,XX=t=>(t-x0)/(x1-x0||1)*W,Y=v=>Hh-3-(v-a)/(b-a)*(Hh-6);const pth=(pts,col,dash)=>pts.length>1?`<path d="${pts.map((p,i)=>(i?'L':'M')+XX(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join('')}" fill="none" stroke="${col}" stroke-width="1.6" ${dash?'stroke-dasharray="4 3"':'filter="url(#rgl)"'}/>`:'';
-svg=`<svg class="rh" viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none"><defs><filter id="rgl" x="-5%" y="-40%" width="110%" height="180%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="#fff4" stroke-dasharray="2 4"/>${pth(bc.map(x=>[x[0],x[1]]),'#0f6',1)}${pth(bc.map(x=>[x[0],x[2]]),'#36c6ff',1)}${pth(lc,'#0f6')}${pth(lm,'#36c6ff')}</svg>
-<div class="scale"><span>${tT(x0)}</span><span>pointillé = registre horaire · plein = live 30 s · ligne = départ 1 000</span><span>${tT(x1)}</span></div>`}
-const legs=(Lg)=>(Lg||[]).map(m=>`<div><span>${m.label}${tg(m.tag==='M'?'MESURÉ':'HYPOTHÈSE')}</span><b>${f(m.usd)}</b></div>`).join('')||'<div><span>—</span></div>';
-const o=r.official||{};
-return`<div class="scan"></div><div class="beam"></div><div class="rhd"><span class="ttl">▚ RACE // ${L[0]} vs ${L[1]}</span><span>base ${f(base,0)} chacun · premier à +${tgt} $ net ${tg('HYPOTHÈSE')}</span></div>
-${lane(0,ch,'ch','Chaser')}${lane(1,mo,'mo','Monee · Molly')}${ticks}${gap}
-<div class="s" style="text-align:center">officiel defi_total : ${L[0]} ${f(o.ch)} · ${L[1]} ${f(o.mo)} à ${tT(o.ts)} · live collecteur 30 s (parts on-chain MESURÉES + registres → HYPOTHÈSE)</div>
-${svg}<details><summary>jambes de la course</summary><div class="silos"><b>${L[0]}</b>${legs(r.ch_legs)}<b style="color:var(--mo)">${L[1]}</b>${legs(r.mo_legs)}</div></details>`}
-// tableau de score course : toujours visible (en-tête sticky), même cadence que le reste (poll 60 s)
-function raceSB(r){const el=$('sb');if(!el)return;const L=r.labels||['CHASER','MONEE'],tgt=r.target||100,base=r.base||1000;
-if(r.chaser==null||r.monee==null){el.innerHTML=`<div class="sbd" style="grid-column:1/4;color:var(--amb)"><div class="dl">COURSE ${L[0]} vs ${L[1]}</div>${r.missing||'en attente du relevé de course'}</div>`;return}
-const col=n=>/MONEE|MOLLY/i.test(n)?'mo':'ch',lead=r.chaser-r.monee,lw=Math.abs(lead)<0.005?-1:lead>0?0:1,top=Math.max(r.chaser,r.monee);
-const lo=-50,X=v=>Math.max(0,Math.min(100,(v-lo)/(tgt-lo)*100)),z=X(0);
-const pane=(i,v)=>{const pc=Math.max(0,Math.min(100,v/tgt*100)),a=Math.min(z,X(v)),w=Math.abs(X(v)-z);
-return`<div class="sbp ${col(L[i])} ${lw===i?'ld':''}"><div class="nmx"><span>${lw===i?'👑 ':''}${L[i]}</span><span>${f(base+v)} $</span></div><div class="sc">${f(v,2,true)} $</div>
-<div class="pb"><div class="z" style="left:${z}%"></div><i class="${v<0?'ng':''}" style="left:${a}%;width:${w}%"></i><div class="fl"></div></div>
-<div class="sv">${f(pc,0)} % · ${f(tgt-v)} $ du 🏁</div></div>`};
-const wc=lw<0?'':col(L[lw]);
-el.innerHTML=`${pane(0,r.chaser)}<div class="sbd" style="color:${lw<0?'#fff':wc==='mo'?'var(--mo)':'var(--g)'}"><div class="dl">ÉCART</div><div class="ar">${lw<0?'=':lw===0?'◀':'▶'} ${f(Math.abs(lead))} $</div>
-<div class="dl">${lw<0?'ÉGALITÉ':L[lw]+' MÈNE'}</div><div class="dl lx">leader : ${f(Math.max(0,tgt-top))} $ du 🏁</div></div>${pane(1,r.monee)}`;
-document.title=`${L[0][0]} ${f(r.chaser,2,true)} · ${L[1][0]} ${f(r.monee,2,true)} · Δ ${f(Math.abs(lead))}`}
+function objView(o){o=o||{};const cap=o.capital,tot=o.total,pnl=o.pnl,pct=o.pnl_pct,gap=o.gap_to_zero,sur=o.surplus;
+const ok=v=>v!=null&&isFinite(v);const dest=0; // objectif = P&L → 0
+// barre : bornée [min(pnl,-cap*0.05) .. max(0,pnl)] relative, 0 au centre-droit
+const lo=ok(pnl)?Math.min(pnl*1.15,-Math.abs(cap||11183)*0.05):-500,hi=Math.max(50,ok(sur)?sur*1.2:50);
+const X=v=>{const a=lo,b=Math.max(hi,1);return Math.max(0,Math.min(100,(v-a)/(b-a)*100))};
+const z=X(0),x=ok(pnl)?X(pnl):z,a=Math.min(z,x),w=Math.abs(x-z);
+const phase=!ok(pnl)?'en attente':pnl<0?'EN ROUTE VERS 0':pnl===0?'À 0':'AU-DESSUS DE 0 (+)';
+const bar=`<div class="rl ch" style="margin-top:4px"><div class="who">P&amp;L vs capital net<small>${phase} · MESURÉ defi_total</small></div>
+<div class="trk"><div class="grid"></div><div class="z" style="left:${z}%"></div><div class="fn"></div>${ok(pnl)?`<div class="tr ${pnl<0?'ng':''}" style="left:${a}%;width:${w}%"></div>`:''}
+<div class="rn ${ok(pnl)?'':'idle'}" style="left:${x}%"><span class="cr">${pnl!=null&&pnl>=0?'◆':'◇'}</span></div></div>
+<div class="sc ${ok(pnl)&&pnl<0?'ng':''}">${ok(pnl)?f(pnl,2,true)+' $':'—'}<small>${ok(pct)?f(pct,2,true)+' %':''}${ok(gap)&&gap>0?' · reste '+f(gap)+' $':ok(sur)&&sur>0?' · +'+f(sur)+' $':''}</small></div></div>`;
+const tiles=`<div class="silos" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin:8px 0 4px">
+<div><span>Capital net déposé ${tg('MESURÉ')}</span><b>${f(cap)}</b></div>
+<div><span>Total on-chain ${tg('MESURÉ')}</span><b>${f(tot)}</b></div>
+<div><span>P&amp;L $ ${tg('MESURÉ')}</span><b class="${cls(pnl)}">${f(pnl,2,true)}</b></div>
+<div><span>P&amp;L % ${tg('MESURÉ')}</span><b class="${cls(pct)}">${f(pct,2,true)} %</b></div>
+<div><span>${ok(gap)&&gap>0?'Écart jusqu\'à 0':'Surplus > 0'} ${tg('MESURÉ')}</span><b class="${cls(-(gap||0))}">${ok(gap)&&gap>0?f(gap):(ok(sur)?f(sur,2,true):'—')}</b></div>
+<div><span>Heure Toronto</span><b style="font-size:13px">${o.toronto||tT(Date.now(),1)}</b></div>
+</div>`;
+const note=`<div class="s" style="text-align:center;margin-top:4px">dépôts ${f(o.depots)} − retraits ${f(o.retraits)} = capital net · total = somme livres defi_total (on-chain) · objectif commun Chaser+Monee : P&amp;L → 0 puis + · ${o.src||'defi_total.py'}${o.total_ts?' · relevé '+tT(o.total_ts):''}</div>`;
+return`<div class="scan"></div><div class="beam"></div><div class="rhd"><span class="ttl">▚ OBJECTIF // P&amp;L → 0 PUIS +</span><span>joint · capital net vs total on-chain ${tg('MESURÉ')}</span></div>
+${tiles}${bar}${note}`}
+function objSB(o){const el=$('sb');if(!el)return;o=o||{};
+if(o.pnl==null||o.total==null){el.innerHTML=`<div class="sbd" style="grid-column:1/4;color:var(--amb)"><div class="dl">OBJECTIF</div>${o.missing||'en attente de defi_total'}</div>`;return}
+const gap=o.gap_to_zero||0,sur=o.surplus||0,pnl=o.pnl;
+const lo=Math.min(pnl*1.1,-200),hi=Math.max(50,sur||50),X=v=>Math.max(0,Math.min(100,(v-lo)/(hi-lo||1)*100)),z=X(0);
+const a=Math.min(z,X(pnl)),w=Math.abs(X(pnl)-z);
+el.innerHTML=`<div class="sbp ch ${pnl>=0?'ld':''}"><div class="nmx"><span>TOTAL</span><span>${f(o.total)} $</span></div><div class="sc">${f(o.capital)} $ net</div>
+<div class="pb"><div class="z" style="left:${z}%"></div><i class="${pnl<0?'ng':''}" style="left:${a}%;width:${w}%"></i><div class="fl"></div></div>
+<div class="sv">${f(o.pnl_pct,2,true)} %</div></div>
+<div class="sbd" style="color:${pnl>=0?'var(--g)':'#ff8'}">
+<div class="dl">OBJECTIF → 0</div><div class="ar" class="${cls(pnl)}">${f(pnl,2,true)} $</div>
+<div class="dl">${gap>0?('reste '+f(gap)+' $'):(sur>0?('+'+f(sur)+' $'):'À ZÉRO')}</div>
+<div class="dl lx">${o.toronto||''}</div></div>
+<div class="sbp mo"><div class="nmx"><span>ON-CHAIN</span><span>MES</span></div><div class="sc ${cls(pnl)}">${f(pnl,2,true)} $</div>
+<div class="pb"><div class="z" style="left:${z}%"></div><i class="${pnl<0?'ng':''}" style="left:${a}%;width:${w}%"></i><div class="fl"></div></div>
+<div class="sv">vs capital net</div></div>`;
+document.title=`P&L ${f(pnl,2,true)} · total ${f(o.total)} · gap ${f(gap)}`}
 function render(){if(!D)return;const t=D.top,now=Date.now();if(t.title){$('ttl').textContent='▓ '+t.title;document.title=t.title}
-$('race').innerHTML=raceView(t.race||{});raceSB(t.race||{});$('racets').textContent='live '+tT(t.px_ts,1);
+$('race').innerHTML=objView(t.objective||{});objSB(t.objective||{});$('racets').textContent=(t.objective&&t.objective.toronto)||('live '+tT(t.px_ts,1));
 const until=t.kill_mode&&t.kill_mode.until;
 const gap=t.live_gap;
 $('top').innerHTML=[
-['TOTAL DeFi (officiel)',f(t.total),`capital net ${f(t.capital)} · ${tT(t.total_ts)}${t.total_partial?`<br><span class="amb">⚠ passe ${tT(t.total_partial.t)} partielle ignorée (${f(t.total_partial.total)} : ${(t.total_partial.miss||[]).length} bloc(s) non lu(s))</span>`:''}`,'H'],
-['P&L vs capital net',`<span class="${cls(t.pnl)}">${f(t.pnl,2,true)}</span>`,`${f(t.pnl_pct,2,true)} % · valeur ${f(t.total)} − capital net ${f(t.capital)} (dépôts − retraits, tous les livres DeFi)`,'H'],
+['TOTAL DeFi (officiel)',f(t.total),`capital net ${f(t.capital)} · ${tT(t.total_ts)}${t.total_partial?`<br><span class="amb">⚠ passe ${tT(t.total_partial.t)} partielle ignorée (${f(t.total_partial.total)} : ${(t.total_partial.miss||[]).length} bloc(s) non lu(s))</span>`:''}`,'M'],
+['P&L vs capital net',`<span class="${cls(t.pnl)}">${f(t.pnl,2,true)}</span>`,`${f(t.pnl_pct,2,true)} % · valeur ${f(t.total)} − capital net ${f(t.capital)} (dépôts − retraits, tous les livres DeFi)`,'M'],
 ['Total live (30 s)',f(t.live_total),`écart vs officiel ${f(gap,2,true)} : frais non collectés (absents de l\'officiel) + prix qui bougent`,'H'],
 ['Tests 500 · Chaser',`<span class="${cls(t.tests.pnl)}">${f(t.tests.pnl,2,true)}</span>`,`${t.tests.n} tests · ${f(t.tests.value)} / entrée ${f(t.tests.entry)} · ${t.tests.inrange}/${t.tests.n} en plage`,'M'],
 ['ZEC · SOL · BTC',`<span style="font-size:15px">${f(t.px.ZEC,0)} · ${f(t.px.SOL,1)} · ${f(t.px.BTC/1000,1)}k</span>`,'USD, prix on-chain du collecteur','M'],
