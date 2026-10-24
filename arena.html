@@ -18,7 +18,7 @@ canvas{display:block;width:100%;height:100%}
 #intel h3{font-size:10px;letter-spacing:2px;color:rgb(0,245,255);margin:14px 0 8px;font-weight:bold}
 .row{font-size:11px;margin-bottom:8px;word-break:break-word;border-left:2px solid rgba(0,255,140,.3);padding-left:7px}
 .meta{font-size:10px;color:rgb(120,170,140)}
-.st-READ{color:rgb(255,230,109)}.st-PENDING{color:rgb(255,150,40)}.st-PARTIAL{color:rgb(255,190,80)}.st-SENT{color:rgb(150,220,175)}
+.st-READ{color:rgb(255,230,109)}.st-WAKE{color:rgb(255,200,60)}.st-PENDING{color:rgb(255,150,40)}.st-PARTIAL{color:rgb(255,190,80)}.st-SENT{color:rgb(150,220,175)}
 a{color:rgb(0,245,255)}
 /* 2026-10-23 wake : NON LUS + carte de réveil */
 #unread{position:fixed;left:10px;bottom:38px;z-index:4;width:min(270px,58vw);max-height:42vh;overflow-y:auto;font-size:10px;background:rgba(0,12,7,.62);border:1px solid rgba(255,150,40,.45);border-radius:7px;padding:6px 7px;box-sizing:border-box}
@@ -252,12 +252,13 @@ function renderCard(){const u=S.cardU;if(!u)return;const url=wakeURL(),w=wakeLbl
   if(u.to==='Chaser'||u.to==='Monee'||u.to==='Instinct')h+='<div class="meta" style="margin-top:6px">'+(u.to==='Chaser'?'Chaser : webhook de sa routine.':esc(u.to)+' : fichier WAKE-… relayé sur le Bridge par Chaser.')+' LU ✓ quand '+esc(u.to)+' dépose un ACK ou une REPONSE qui cite ce fichier.</div>';
   document.getElementById('cardBody').innerHTML=h;const b=document.getElementById('wkBtn');if(b)b.onclick=()=>doWake(u);
   const rb=document.getElementById('rpBtn');if(rb)rb.onclick=()=>openReply(rb.getAttribute('data-rpto'),u.file)}
+function wl(j,r){return j.status==='queued_relay'&&j.webhook?'WAKE EN FILE (webhook Chaser indisponible)':(WL[j.status]||('HTTP '+(r?r.status:'?')))}
 const WL={sent:'WAKE SENT',queued_relay:'WAKE PENDING (relais)',needs_webhook:'Webhook Chaser non configuré',rate_limited:'déjà réveillé (< 2 min)',error:'WAKE ÉCHEC',unknown_file:'fichier inconnu du fil'};
 async function doWake(u){const url=wakeURL();if(!url)return;S.localWake[u.id]={label:'⚡ envoi…',busy:true};renderCard();
   const now=performance.now();S.packets.push({from:'Frédéric',to:u.to,kind:'WAKE',p:0,speed:.016,ev:{subject:u.subject},wake:true});S.flash['Frédéric']=now;
   S.bubbles.push({text:('FRÉD→'+NID[u.to].ab+' · ⚡ WAKE '+u.subject).slice(0,40),sub:u.file.slice(0,44),at:'Frédéric',born:now,c:C.gold});if(S.bubbles.length>3)S.bubbles.shift();
   let lbl;try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({file_id:u.drive_id,file_name:u.file,target:u.to}),cache:'no-store',mode:'cors',credentials:'omit'});
-    const j=await r.json().catch(()=>({}));lbl=(WL[j.status]||('HTTP '+r.status))+(j.retry_s?' · '+j.retry_s+' s':'');if(j.id)S.seen.add('wake:'+j.id);
+    const j=await r.json().catch(()=>({}));lbl=wl(j,r)+(j.retry_s?' · '+j.retry_s+' s':'');if(j.id)S.seen.add('wake:'+j.id);
     S.wakePop={to:u.to,text:WL[j.status]||'WAKE ?',c:j.status==='sent'?C.gold:j.status==='queued_relay'?C.orange:C.red};
   }catch(e){lbl='réveil indisponible (tunnel injoignable)';S.wakePop={to:u.to,text:'WAKE ÉCHEC',c:C.red}}
   S.localWake[u.id]={label:lbl+' · '+hm(Date.now()),busy:false};renderCard();renderUnread();renderIntel();if(MP.who)renderMP();setTimeout(poll,2500)}
@@ -321,17 +322,56 @@ function renderMP(){const who=MP.who;if(!who)return;const n=NID[who],files=membe
   h+='<a href="'+BRIDGE_URL+'" target="_blank" rel="noopener noreferrer">📁 Ouvrir le dossier Bridge ↗</a></div>';
   if(wk&&!wurl)h+='<div class="meta" style="color:rgb(255,150,40)">⚡ réveil indisponible hors tunnel (lecture Drive OK)</div>';
   if(wk&&S.localWake[wk.id])h+='<div class="meta" style="color:rgb(255,230,109)">◈ '+esc(S.localWake[wk.id].label)+'</div>';
-  for(const e of files.slice(0,MP.show)){const st=mStat(e,who),u=unIds[e.id];
+  if(RD[who]&&RD[who].busy)h+='<div class="meta" style="color:rgb(255,200,60)">◈ '+esc(who.toUpperCase())+' · LECTURE… (réveil en cours)</div>';else if(RD[who]&&RD[who].sum)h+='<div class="meta" style="color:rgb(255,200,60)">◈ '+esc(RD[who].sum)+'</div>';
+  for(const e of files.slice(0,MP.show)){const st=mStat(e,who),u=unIds[e.id];if(u&&st.s!=='READ'){const w=wakeLbl(u);if(w){st.s='WAKE';st.extra=w}}
     h+='<div class="f"><a href="https://drive.google.com/file/d/'+encodeURIComponent(e.drive_id)+'/view" target="_blank" rel="noopener noreferrer">'+esc(e.file)+' ↗</a>'+
       (u?'<span class="nl" data-u="'+esc(u.id)+'" title="carte + ⚡ réveil">NON LU</span>':'')+
       '<div class="meta">'+esc(e.t.slice(5))+' HAE · '+esc(st.rel)+' · <span class="st-'+esc(st.s)+'">'+esc(st.s)+'</span>'+(st.extra?' · '+esc(st.extra):'')+'</div></div>'}
   if(!files.length)h+='<div class="meta" style="margin-top:6px">aucun fichier Bridge dans la fenêtre du fil · voir le dossier ↗</div>';
   if(files.length>MP.show)h+='<div class="more" id="mpMore">+ '+(files.length-MP.show)+' plus ancien(s)</div>';
   document.getElementById('mpBody').innerHTML=h;
-  document.getElementById('mpRp').onclick=()=>{const t=who==='Frédéric'?'tous':who;closeMP();openReply(t)};
+  document.getElementById('mpRp').onclick=()=>openReply(who==='Frédéric'?'tous':who);
   const wb=document.getElementById('mpWk');if(wb&&wk)wb.onclick=()=>doWake(wk);
   const mb=document.getElementById('mpMore');if(mb)mb.onclick=()=>{MP.show+=30;renderMP()}}
 document.getElementById('mpX').onclick=closeMP;
+
+
+// ===== 2026-10-24 avatar v2 : cycle de tap — 1× = l'agent va LIRE (réveil de ses non-lus) · 2× = ↩ répondre · 3× = fermer =====
+const BRIDGE_POS={x:330,y:160,z:-60};const RD={};S.trips=[];
+function tapStep(who){const rto=who==='Frédéric'?'tous':who;if(RP.to===rto)return 2;if(MP.who===who&&who!=='Frédéric')return 1;return 0}
+function tapHint(who){const st=tapStep(who);if(who==='Frédéric')return st===2?'▸ tap = fermer':'tap = ↩ répondre à tous';
+  if(RD[who]&&RD[who].busy)return'◈ LECTURE…';return st===0?'1× lire · 2× répondre':st===1?'▸ 2× = ↩ répondre':'▸ 3× = fermer'}
+function avatarTap(who){const st=tapStep(who);
+  if(who==='Frédéric'){if(st===2){closeReply();closeMP()}else{openMP('Frédéric');openReply('tous')}return}
+  if(st===0){if(RP.to)closeReply();openMP(who);readFlow(who)}
+  else if(st===1)openReply(who);
+  else{closeReply();closeMP()}}
+async function readFlow(who){if(RD[who]&&RD[who].busy)return;const url=wakeURL(),now=performance.now();
+  const un=S.unread.filter(u=>u.to===who&&u.wakeable&&u.measurable).sort((a,b)=>b.ts-a.ts).slice(0,6);
+  if(!un.length){RD[who]={sum:'rien de non lu · '+hm(Date.now())+' HAE'};S.pops.push({at:who,text:'À JOUR ✓',born:now,c:C.green});renderMP();return}
+  if(!url){RD[who]={sum:'réveil indisponible hors tunnel · '+un.length+' non lu(s) restent NON LUS'};S.pops.push({at:who,text:'⚠ hors tunnel',born:now,c:C.orange});renderMP();return}
+  RD[who]={busy:true};S.status[who]='LECTURE…';S.flash[who]=now;S.trips.push({who,born:now});
+  S.bubbles.push({text:(NID[who].ab+' → BRIDGE · LECTURE… '+un.length+' fichier(s)').slice(0,40),sub:'réveil réel · '+hm(Date.now())+' HAE',at:who,born:now,c:NID[who].c});if(S.bubbles.length>3)S.bubbles.shift();
+  renderMP();const cnt={};
+  for(const u of un){S.localWake[u.id]={label:'⚡ envoi…',busy:true};let lbl;
+    try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({file_id:u.drive_id,file_name:u.file,target:u.to}),cache:'no-store',mode:'cors',credentials:'omit'});
+      const j=await r.json().catch(()=>({}));lbl=wl(j,r)+(j.retry_s?' · '+j.retry_s+' s':'');if(j.id)S.seen.add('wake:'+j.id);cnt[lbl.split(' · ')[0]]=(cnt[lbl.split(' · ')[0]]||0)+1;
+    }catch(e){lbl='réveil indisponible (tunnel injoignable)';cnt['ÉCHEC']=(cnt['ÉCHEC']||0)+1}
+    S.localWake[u.id]={label:lbl+' · '+hm(Date.now()),busy:false};renderMP()}
+  const sum=Object.entries(cnt).map(([k,v])=>k+' ×'+v).join(' · ');RD[who]={sum:sum+' · '+hm(Date.now())+' HAE · READ ✓ dès ACK',ok:!cnt['ÉCHEC'],end:performance.now()};
+  renderMP();renderUnread();renderIntel();setTimeout(poll,2500)}
+function drawBridge(pb,now){ctx.save();const s=pb.s,w=34*s,h=24*s,x=pb.x-w/2,y=pb.y-h/2,act=S.trips.length>0,a=act?.75+.25*Math.sin(now*.01):.55;
+  ctx.fillStyle=col([0,10,5],.85);ctx.strokeStyle=col(C.cyan,a);ctx.lineWidth=1.5;rr(x,y,w,h,3*s);ctx.fill();ctx.stroke();rr(x,y-5*s,w*.42,7*s,2*s);ctx.stroke();
+  ctx.textAlign='center';ctx.font='bold '+Math.max(9,Math.round(10*s))+'px monospace';ctx.fillStyle=col(C.cyan,a);ctx.fillText('BRIDGE · DRIVE',pb.x,y-10*s);ctx.restore()}
+function drawTrips(pr,now){const D=3400;S.trips=S.trips.filter(t=>{const age=now-t.born;if(age>D){const r=RD[t.who];if(r&&r.busy){t.born=now-D*.5;return true}
+      S.flash[t.who]=now;S.pops.push({at:t.who,text:r&&r.ok===false?'⚠ WAKE ÉCHEC':'⚡ WAKE · attend READ',born:now,c:r&&r.ok===false?C.red:C.gold});S.status[t.who]=r&&r.ok===false?'WAKE ÉCHEC':'⚡ WAKE · PENDING';return false}return true});
+  for(const t of S.trips){const age=now-t.born,a=pr[t.who],b=pr.BRIDGE;let q=age<1300?age/1300:age<2100?1:1-(age-2100)/1300;q=Math.max(0,Math.min(1,q));const e=q*q*(3-2*q);
+    const cx=(a.x+b.x)/2,cy=Math.min(a.y,b.y)-70,u=1-e,x=u*u*a.x+2*u*e*cx+e*e*b.x,y=u*u*a.y+2*u*e*cy+e*e*b.y,n=NID[t.who],r=16*((a.s+b.s)/2);
+    ctx.save();ctx.strokeStyle=col(n.c,.35);ctx.setLineDash([2,5]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.quadraticCurveTo(cx,cy,b.x,b.y);ctx.stroke();ctx.setLineDash([]);
+    ctx.shadowColor=col(n.c,1);ctx.shadowBlur=18;ctx.fillStyle=col([0,10,5],.9);ctx.strokeStyle=col(n.c,1);ctx.lineWidth=2;ctx.beginPath();
+    for(let i=0;i<6;i++){const ang=Math.PI/3*i+now*.004,px=x+Math.cos(ang)*r,py=y+Math.sin(ang)*r*.9;i?ctx.lineTo(px,py):ctx.moveTo(px,py)}ctx.closePath();ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+    ctx.textAlign='center';ctx.font='bold 10px monospace';ctx.fillStyle=col(n.c,1);ctx.fillText(n.ab,x,y+4);
+    ctx.font='bold 11px monospace';ctx.fillStyle=col(C.gold,.6+.4*Math.sin(now*.012));ctx.fillText(age>=1100&&age<2300?'LECTURE…':(age<1100?'→ BRIDGE':'← retour'),x,y-r-8);ctx.restore()}}
 
 // ===== UI =====
 const FILTERS=['ALL','Chaser','Monee','Instinct','Frédéric','Gardien'];
@@ -384,7 +424,7 @@ function drawNode(n,p,now){const r=(n.small?20:30)*p.s,fa=Math.max(0,1-(now-(S.f
     }
   if(AGENTS.indexOf(n.id)>=0||n.id==='Frédéric'){S.hits.unshift({x:p.x,y:p.y,r:Math.max(26,r*1.6),mnode:n.id});const on=MP.who===n.id;
     if(on){ctx.strokeStyle=col(n.c,.9);ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(p.x,p.y,r*1.9,0,Math.PI*2);ctx.stroke();ctx.setLineDash([])}
-    ctx.font='bold '+Math.max(9,Math.round(10*p.s))+'px monospace';ctx.fillStyle=col(on?n.c:C.gold,.55+.25*Math.sin(now*.003));ctx.fillText(on?'▤ messages ouverts':'▤ tap = ses messages Drive',p.x,p.y+r+31)}
+    ctx.font='bold '+Math.max(9,Math.round(10*p.s))+'px monospace';ctx.fillStyle=col(on?n.c:C.gold,.55+.25*Math.sin(now*.003));ctx.fillText(tapHint(n.id),p.x,p.y+r+31)}
   ctx.restore()}
 function bez(a,b,t){const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2-90*((a.s+b.s)/2),u=1-t;return{x:u*u*a.x+2*u*t*cx+t*t*b.x,y:u*u*a.y+2*u*t*cy+t*t*b.y}}
 function drawPacket(pk,pr){const a=pr[pk.from],b=pr[pk.to],c=KIND_C[pk.kind]||C.cyan;ctx.save();ctx.strokeStyle=col(c,.28);ctx.lineWidth=1.5;ctx.beginPath();
@@ -428,7 +468,7 @@ function fire(it,now){
   return it.replay?1700:it.intro?2600:2400}
 let last=performance.now();
 function frame(now){const dt=Math.min(40,now-last);last=now;S.hits=[];ctx.fillStyle='rgb(2,8,5)';ctx.fillRect(0,0,W,H);drawRain(dt);drawGrid(now);
-  const pr={};NODES.forEach(n=>pr[n.id]=project(n.pos,now));drawLinks(pr,now);
+  const pr={};NODES.forEach(n=>pr[n.id]=project(n.pos,now));pr.BRIDGE=project(BRIDGE_POS,now);drawLinks(pr,now);drawBridge(pr.BRIDGE,now);
   [...NODES].sort((a,b)=>pr[b.id].z-pr[a.id].z).forEach(n=>drawNode(n,pr[n.id],now));
   const keep=[];for(const pk of S.packets){pk.p+=pk.speed*(dt/16);if(pk.p<1){keep.push(pk);drawPacket(pk,pr)}else{S.flash[pk.to]=now;
     if(pk.read){S.pops.push({at:pk.to,text:'READ ✓',born:now,c:C.yel})}
@@ -437,14 +477,14 @@ function frame(now){const dt=Math.min(40,now-last);last=now;S.hits=[];ctx.fillSt
     else if(pk.readAt){S.pops.push({at:pk.to,text:'READ ✓ '+pk.readAt,born:now,c:C.yel});S.status[pk.to]='READ'}
     else if(pk.pending){S.pops.push({at:pk.to,text:'REÇU · PENDING',born:now,c:C.orange});S.status[pk.to]='PENDING'}
     else{S.pops.push({at:pk.to,text:'REÇU',born:now,c:C.dim})}}}
-  S.packets=keep;drawBubbles(pr,now);drawPops(pr,now);drawChrome(now);
+  S.packets=keep;drawTrips(pr,now);drawBubbles(pr,now);drawPops(pr,now);drawChrome(now);
   if(now>=S.nextAt&&S.queue.length){S.nextAt=now+fire(S.queue.shift(),now)}
   else if(S.mode==='REPLAY'&&!S.queue.length&&!S.packets.length&&S.replayEnd){S.replayEnd=0;setTimeout(goLive,1500)}
   else if(S.mode==='LIVE'&&!S.queue.length&&!S.packets.length&&now>S.nextAt+6000&&S.nextAt){S.nextAt=0;setStatuses()}
   requestAnimationFrame(frame)}
 cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;
   for(let i=S.hits.length-1;i>=0;i--){const h=S.hits[i];const inR=h.x0!=null?(x>=h.x0&&x<=h.x1&&y>=h.y0&&y<=h.y1):((x-h.x)**2+(y-h.y)**2<=h.r*h.r);if(!inR)continue;
-    if(h.uid){openCard(h.uid);return}if(h.mnode){if(MP.who===h.mnode)closeMP();else openMP(h.mnode);return}}});
+    if(h.uid){openCard(h.uid);return}if(h.mnode){avatarTap(h.mnode);return}}});
 setInterval(()=>{renderUnread();if(S.cardId)renderCard()},30000);
 requestAnimationFrame(frame);
 poll();setInterval(()=>{if(S.mode==='LIVE'||true)poll()},POLL_MS);
