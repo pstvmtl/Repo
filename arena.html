@@ -20,6 +20,23 @@ canvas{display:block;width:100%;height:100%}
 .meta{font-size:10px;color:rgb(120,170,140)}
 .st-READ{color:rgb(255,230,109)}.st-PENDING{color:rgb(255,150,40)}.st-PARTIAL{color:rgb(255,190,80)}.st-SENT{color:rgb(150,220,175)}
 a{color:rgb(0,245,255)}
+/* 2026-10-23 wake : NON LUS + carte de réveil */
+#unread{position:fixed;left:10px;bottom:38px;z-index:4;width:min(270px,58vw);max-height:42vh;overflow-y:auto;font-size:10px;background:rgba(0,12,7,.62);border:1px solid rgba(255,150,40,.45);border-radius:7px;padding:6px 7px;box-sizing:border-box}
+#unread .hd{color:rgb(255,150,40);font-weight:bold;letter-spacing:1px;cursor:pointer}
+#unread .g{margin-top:4px;color:rgb(0,245,255);font-weight:bold}
+.ui{cursor:pointer;padding:2px 3px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ui:hover{background:rgba(0,255,140,.12)}
+.ui .ag{color:rgb(120,170,140)}.ui .ws{color:rgb(255,230,109)}
+#unread.min .lst{display:none}
+#card{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:8;width:min(400px,94vw);background:rgba(0,14,8,.96);border:1px solid rgb(0,245,255);box-shadow:0 0 22px rgba(0,245,255,.35);border-radius:9px;padding:12px 14px;font-size:11px;display:none}
+#card.on{display:block}
+#card .t{color:rgb(0,245,255);font-weight:bold;letter-spacing:1px;margin-bottom:6px;word-break:break-all}
+#card .x{position:absolute;right:9px;top:6px;cursor:pointer;color:rgb(150,220,175);font-size:14px}
+#card .acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+#card .acts a,#card .acts button{font:bold 11px ui-monospace,Menlo,monospace;padding:7px 10px;border-radius:6px;border:1px solid rgba(0,245,255,.6);background:rgba(0,40,50,.6);color:rgb(0,245,255);text-decoration:none;cursor:pointer}
+#card .acts button.wk{border-color:rgb(255,200,60);color:rgb(255,200,60);background:rgba(60,40,0,.55)}
+#card .acts button:disabled{opacity:.45;cursor:not-allowed}
+#card .res{margin-top:8px;font-weight:bold}
 </style></head>
 <body>
 <div id="scene"><canvas id="cv"></canvas></div>
@@ -32,6 +49,8 @@ a{color:rgb(0,245,255)}
   <span id="live">…</span>
 </div>
 <div id="intel"><div id="intelBody"></div></div>
+<div id="unread"></div>
+<div id="card"><span class="x" id="cardX">✕</span><div id="cardBody"></div></div>
 <script>
 'use strict';
 // ===== Données : fil RÉEL /api/council_feed (Bridge Drive + gardiens), sondé toutes les 15 s =====
@@ -66,7 +85,7 @@ async function loadFeed(){
 const POLL_MS=15000, STALE_MS=5*60000;
 const col=(c,a)=>'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';
 const C={cyan:[0,245,255],mag:[255,43,214],green:[57,255,20],gold:[255,200,60],red:[255,70,70],yel:[255,230,109],orange:[255,150,40],violet:[175,125,255],txt:[220,255,228],dim:[150,220,175]};
-const KIND_C={DROP:C.cyan,READ:C.yel,REPLY:C.green,PROMPT:C.violet,DEMANDE:C.orange,ALERTE:C.red,GO:C.gold};
+const KIND_C={DROP:C.cyan,READ:C.yel,REPLY:C.green,PROMPT:C.violet,DEMANDE:C.orange,ALERTE:C.red,GO:C.gold,WAKE:C.gold};
 const NODES=[
   {id:'Chaser',ab:'CHASER',role:'mesure · kills · HUD',c:C.cyan,pos:{x:-260,y:0,z:40}},
   {id:'Monee',ab:'MONEE',role:'exécute · LPA / Hrn8',c:C.mag,pos:{x:260,y:0,z:40}},
@@ -83,7 +102,8 @@ const hm=ms=>fmtT.format(new Date(ms)).replace(/\s*h\s*/,':');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const S={feed:null,src:'',err:'',lastSync:0,seen:new Set(),readSeen:new Set(),first:true,queue:[],mode:'LIVE',filter:'ALL',
-  deferred:[],packets:[],bubbles:[],pops:[],flash:{},status:{},glitch:0,nextAt:0,lastEv:null,replayEnd:0};
+  deferred:[],packets:[],bubbles:[],pops:[],flash:{},status:{},glitch:0,nextAt:0,lastEv:null,replayEnd:0,
+  unread:[],ucount:{},localWake:{},hits:[],uMin:false};
 NODES.forEach(n=>S.status[n.id]='IDLE');
 
 function targetsOf(e){ if(e.src==='chain')return['Frédéric']; let t=e.to.indexOf('Conseil')>=0?AGENTS.filter(a=>a!==e.from):e.to.slice(); return t.filter(x=>NID[x]&&x!==e.from);}
@@ -111,7 +131,8 @@ async function poll(){
       }
       if(S.queue.length>12)S.queue=S.queue.slice(-12);
     }
-    renderIntel();
+    S.unread=Array.isArray(f.unread)?f.unread:[]; S.ucount={}; S.unread.forEach(u=>{if(u.measurable)S.ucount[u.to]=(S.ucount[u.to]||0)+1});
+    renderIntel(); renderUnread();
   }catch(err){S.err=String(err&&err.message||err)}
   badge();
 }
@@ -137,7 +158,9 @@ function renderIntel(){
   const f=S.feed; if(!f)return; const b=document.getElementById('intelBody');
   const evs=f.events.filter(passFilter).slice(0,120);
   let h='<h3>▣ FIL RÉEL · '+esc(f.generated)+'</h3><div class="meta">Bridge : '+(f.bridge&&f.bridge.ok?'OK':'KO')+' · '+(f.bridge&&f.bridge.files_listed||'?')+' fichiers · sondage serveur '+f.poll_s+' s · page 15 s · fenêtre '+f.window_h+' h</div>';
-  h+='<div class="meta" style="margin-top:4px">'+esc(f.read_rule)+'</div><h3>▣ LEDGER (récent → ancien)</h3>';
+  h+='<div class="meta" style="margin-top:4px">'+esc(f.read_rule)+'</div>';
+  h+='<h3>▣ NON LUS ('+S.unread.length+') · clic = carte + ⚡ réveil</h3>'+unreadHTML(S.unread.filter(u=>S.filter==='ALL'||u.to===S.filter||u.from===S.filter),400);
+  h+='<h3>▣ LEDGER (récent → ancien)</h3>';
   for(const e of evs){
     const rb=Object.entries(e.read_by||{}).map(([k,v])=>k+' '+v.t).join(', ');
     h+='<div class="row"><span class="meta">'+esc(e.t.slice(5))+'</span> <b>'+esc(e.from)+'</b> → '+esc(e.to.join(', '))+' · '+esc(e.type)+' · '+esc(e.subject)+
@@ -146,6 +169,39 @@ function renderIntel(){
   }
   b.innerHTML=h;
 }
+// ===== 2026-10-23 wake : liste NON LUS (coin de scène + INTEL) et carte de réveil =====
+const GROUPS=['Chaser','Monee','Instinct','Frédéric'];
+function age(ms){const m=Math.max(0,Math.round((Date.now()-ms)/60000));return m<60?m+' min':Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')}
+function wakeLbl(u){const l=S.localWake[u.id];return l?l.label:(u.wake?u.wake.label+' '+u.wake.t:'')}
+function unreadHTML(list,max){let h='';
+  for(const g of GROUPS){const it=list.filter(u=>u.to===g);if(!it.length)continue;
+    h+='<div class="g">▸ '+esc(g.toUpperCase())+' · '+it.length+(g==='Frédéric'?' (non mesurable)':'')+'</div>';
+    for(const u of it.slice(0,max)){const w=wakeLbl(u);h+='<div class="ui" data-u="'+esc(u.id)+'" title="'+esc(u.file)+'"><span class="ag">'+esc(age(u.ts))+' · '+esc(u.from)+' →</span> '+esc(u.type)+' '+esc(u.subject)+(w?' <span class="ws">· '+esc(w)+'</span>':'')+'</div>'}}
+  return h||'<div class="meta">aucun fichier non lu</div>'}
+function renderUnread(){const el=document.getElementById('unread');const n=S.unread.length;
+  el.className=S.uMin?'min':'';el.innerHTML='<div class="hd" id="uHd">◉ NON LUS · '+n+' '+(S.uMin?'▸':'▾')+'</div><div class="lst">'+unreadHTML(S.unread,6)+'</div>';}
+document.addEventListener('click',ev=>{const t=ev.target.closest&&ev.target.closest('[data-u]');if(t){openCard(t.getAttribute('data-u'));return}
+  if(ev.target.id==='uHd'){S.uMin=!S.uMin;renderUnread()}});
+document.getElementById('cardX').onclick=()=>{document.getElementById('card').classList.remove('on');S.cardId=null};
+function openCard(uid){const u=S.unread.find(x=>x.id===uid)||(S.cardU&&S.cardU.id===uid?S.cardU:null);if(!u)return;S.cardId=uid;S.cardU=u;renderCard();document.getElementById('card').classList.add('on')}
+function renderCard(){const u=S.cardU;if(!u)return;const url=wakeURL(),w=wakeLbl(u),busy=S.localWake[u.id]&&S.localWake[u.id].busy;
+  let h='<div class="t">'+esc(u.file)+'</div><div>'+esc(u.from)+' → <b>'+esc(u.to)+'</b> · '+esc(u.type)+'</div><div class="meta">déposé '+esc(u.t)+' HAE · il y a '+esc(age(u.ts))+' · '+(u.measurable?'NON LU (aucun fichier de '+esc(u.to)+' ne le cite)':'lecture non mesurable')+'</div>';
+  h+='<div class="acts"><a href="https://drive.google.com/file/d/'+encodeURIComponent(u.drive_id)+'/view" target="_blank" rel="noopener noreferrer">OPEN ↗</a>';
+  if(u.wakeable)h+='<button class="wk" id="wkBtn"'+(url&&!busy?'':' disabled')+'>⚡ RÉVEILLER '+esc(u.to.toUpperCase())+'</button>';
+  h+='</div>';
+  if(u.wakeable&&!url)h+='<div class="res" style="color:rgb(255,150,40)">réveil indisponible hors tunnel</div>';
+  if(w)h+='<div class="res" style="color:rgb(255,230,109)">◈ '+esc(w)+'</div>';
+  if(u.to==='Chaser'||u.to==='Monee'||u.to==='Instinct')h+='<div class="meta" style="margin-top:6px">'+(u.to==='Chaser'?'Chaser : webhook de sa routine.':esc(u.to)+' : fichier WAKE-… relayé sur le Bridge par Chaser.')+' LU ✓ quand '+esc(u.to)+' dépose un ACK ou une REPONSE qui cite ce fichier.</div>';
+  document.getElementById('cardBody').innerHTML=h;const b=document.getElementById('wkBtn');if(b)b.onclick=()=>doWake(u)}
+const WL={sent:'WAKE SENT',queued_relay:'WAKE PENDING (relais)',needs_webhook:'Webhook Chaser non configuré',rate_limited:'déjà réveillé (< 2 min)',error:'WAKE ÉCHEC',unknown_file:'fichier inconnu du fil'};
+async function doWake(u){const url=wakeURL();if(!url)return;S.localWake[u.id]={label:'⚡ envoi…',busy:true};renderCard();
+  const now=performance.now();S.packets.push({from:'Frédéric',to:u.to,kind:'WAKE',p:0,speed:.016,ev:{subject:u.subject},wake:true});S.flash['Frédéric']=now;
+  S.bubbles.push({text:('FRÉD→'+NID[u.to].ab+' · ⚡ WAKE '+u.subject).slice(0,40),sub:u.file.slice(0,44),at:'Frédéric',born:now,c:C.gold});if(S.bubbles.length>3)S.bubbles.shift();
+  let lbl;try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({file_id:u.drive_id,file_name:u.file,target:u.to}),cache:'no-store',mode:'cors',credentials:'omit'});
+    const j=await r.json().catch(()=>({}));lbl=(WL[j.status]||('HTTP '+r.status))+(j.retry_s?' · '+j.retry_s+' s':'');if(j.id)S.seen.add('wake:'+j.id);
+    S.wakePop={to:u.to,text:WL[j.status]||'WAKE ?',c:j.status==='sent'?C.gold:j.status==='queued_relay'?C.orange:C.red};
+  }catch(e){lbl='réveil indisponible (tunnel injoignable)';S.wakePop={to:u.to,text:'WAKE ÉCHEC',c:C.red}}
+  S.localWake[u.id]={label:lbl+' · '+hm(Date.now()),busy:false};renderCard();renderUnread();renderIntel();setTimeout(poll,2500)}
 
 // ===== UI =====
 const FILTERS=['ALL','Chaser','Monee','Instinct','Frédéric','Gardien'];
@@ -180,7 +236,7 @@ function drawGrid(now){ctx.save();const vx=W*.5,vy=H*.52,sc=(now*.00025)%1;ctx.l
   const g=ctx.createLinearGradient(0,vy-10,0,vy+60);g.addColorStop(0,col([2,8,5],.9));g.addColorStop(1,col([2,8,5],0));ctx.fillStyle=g;ctx.fillRect(0,vy-10,W,70);ctx.restore()}
 function drawLinks(pr,now){ctx.save();ctx.setLineDash([3,7]);ctx.lineDashOffset=-now*.02;ctx.lineWidth=1;ctx.strokeStyle=col([0,255,140],.16);
   for(let i=0;i<NODES.length;i++)for(let j=i+1;j<NODES.length;j++){if(NODES[i].small&&NODES[j].id!=='Frédéric'||NODES[j].small&&NODES[i].id!=='Frédéric')continue;const a=pr[NODES[i].id],b=pr[NODES[j].id];ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.restore()}
-function stRGB(s,fb){if(s.indexOf('PENDING')>=0)return C.orange;if(s.indexOf('ALERTE')>=0)return C.red;if(s.indexOf('READ')>=0)return C.yel;if(s==='IDLE')return C.dim;return fb}
+function stRGB(s,fb){if(s.indexOf('⚡')>=0)return C.gold;if(s.indexOf('PENDING')>=0)return C.orange;if(s.indexOf('ALERTE')>=0)return C.red;if(s.indexOf('READ')>=0)return C.yel;if(s==='IDLE')return C.dim;return fb}
 function drawNode(n,p,now){const r=(n.small?20:30)*p.s,fa=Math.max(0,1-(now-(S.flash[n.id]||-9999))/700),dim=S.filter!=='ALL'&&S.filter!==n.id?.35:1;
   ctx.save();ctx.globalAlpha=dim;const fy=Math.min(H-30,p.y+r+70*p.s),bm=ctx.createLinearGradient(0,p.y,0,fy);bm.addColorStop(0,col(n.c,.35+fa*.4));bm.addColorStop(1,col(n.c,0));ctx.fillStyle=bm;ctx.fillRect(p.x-r*.5,p.y,r,fy-p.y);
   ctx.strokeStyle=col(n.c,.45+fa*.4);ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(p.x,fy,r*1.8,r*.38,0,0,Math.PI*2);ctx.stroke();
@@ -192,16 +248,21 @@ function drawNode(n,p,now){const r=(n.small?20:30)*p.s,fa=Math.max(0,1-(now-(S.f
   ctx.textAlign='center';ctx.font='bold '+Math.max(10,Math.round((n.small?11:14)*p.s))+'px monospace';ctx.fillStyle=col(n.c,1);ctx.fillText(n.id.toUpperCase(),p.x,p.y-r-16);
   ctx.font=Math.max(9,Math.round(10*p.s))+'px monospace';ctx.fillStyle=col(C.dim,.8);ctx.fillText(n.role,p.x,p.y-r-3);
   const st=S.status[n.id]||'IDLE',sc=stRGB(st,n.c),pu=st.indexOf('PENDING')>=0?.55+.45*Math.sin(now*.006):1;
-  ctx.font='bold '+Math.max(10,Math.round(11*p.s))+'px monospace';ctx.fillStyle=col(sc,pu);ctx.fillText('◈ '+st,p.x,p.y+r+18);ctx.restore()}
+  ctx.font='bold '+Math.max(10,Math.round(11*p.s))+'px monospace';ctx.fillStyle=col(sc,pu);ctx.fillText('◈ '+st,p.x,p.y+r+18);
+  const un=S.ucount[n.id]||0;if(un){const pl=.5+.5*Math.sin(now*.005);ctx.strokeStyle=col(C.orange,.25+.5*pl);ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,r*(1.35+.35*pl),0,Math.PI*2);ctx.stroke();
+    const bx=p.x+r*.95,by=p.y-r*.85;ctx.fillStyle=col(C.orange,1);ctx.beginPath();ctx.arc(bx,by,10,0,Math.PI*2);ctx.fill();ctx.fillStyle=col([0,0,0],1);ctx.font='bold 11px monospace';ctx.fillText(String(un),bx,by+4);
+    S.hits.push({x:p.x,y:p.y,r:r*1.6,node:n.id})}
+  ctx.restore()}
 function bez(a,b,t){const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2-90*((a.s+b.s)/2),u=1-t;return{x:u*u*a.x+2*u*t*cx+t*t*b.x,y:u*u*a.y+2*u*t*cy+t*t*b.y}}
 function drawPacket(pk,pr){const a=pr[pk.from],b=pr[pk.to],c=KIND_C[pk.kind]||C.cyan;ctx.save();ctx.strokeStyle=col(c,.28);ctx.lineWidth=1.5;ctx.beginPath();
   for(let i=0;i<=24;i++){const q=bez(a,b,i/24*pk.p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)}ctx.stroke();
   for(let k=7;k>=1;k--){const tt=pk.p-k*.025;if(tt<0)continue;const q=bez(a,b,tt);ctx.fillStyle=col(c,.5*(1-k/8));ctx.beginPath();ctx.arc(q.x,q.y,4-k*.35,0,Math.PI*2);ctx.fill()}
-  const h=bez(a,b,pk.p);ctx.shadowColor=col(c,1);ctx.shadowBlur=16;ctx.fillStyle=col(c,1);ctx.beginPath();ctx.arc(h.x,h.y,5.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  const h=bez(a,b,pk.p);if(pk.uid)S.hits.push({x:h.x,y:h.y,r:16,uid:pk.uid});ctx.shadowColor=col(c,1);ctx.shadowBlur=16;ctx.fillStyle=col(c,1);ctx.beginPath();ctx.arc(h.x,h.y,5.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
   ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.fillStyle=col(c,.95);ctx.fillText(pk.kind,h.x,h.y-10);ctx.restore()}
 function drawBubbles(pr,now){S.bubbles=S.bubbles.filter(b=>now-b.born<4000);const per={};
   for(let i=S.bubbles.length-1;i>=0;i--){const b=S.bubbles[i],p=pr[b.at],stk=per[b.at]||0;per[b.at]=stk+1;const age=now-b.born,al=age<220?age/220:Math.max(0,1-(age-220)/3780);
     ctx.save();ctx.font='bold 12px monospace';const bw=ctx.measureText(b.text).width+20,bh=b.sub?36:24;let x=Math.max(10,Math.min(W-bw-10,p.x-bw/2));const y=Math.max(64,p.y-30*p.s-70-stk*40-age*.006);
+    if(b.uid)S.hits.push({x0:x,y0:y,x1:x+bw,y1:y+bh,uid:b.uid});
     ctx.globalAlpha=al;rr(x,y,bw,bh,6);ctx.fillStyle=col([0,14,8],.9);ctx.fill();ctx.strokeStyle=col(b.c,.95);ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle=col(b.c,1);ctx.fillRect(x,y,3,bh);
     ctx.fillStyle=col(C.txt,1);ctx.textAlign='left';ctx.fillText(b.text,x+10,y+16);if(b.sub){ctx.font='10px monospace';ctx.fillStyle=col(C.dim,.9);ctx.fillText(b.sub,x+10,y+30)}ctx.restore()}}
 function drawPops(pr,now){S.pops=S.pops.filter(q=>now-q.born<1900);const per={};for(const q of S.pops){const p=pr[q.at],stk=per[q.at]||0;per[q.at]=stk+1;const age=now-q.born,a=Math.max(0,1-age/1900),r=30*p.s;
@@ -213,7 +274,7 @@ function drawChrome(now){ctx.save();ctx.strokeStyle=col([0,255,140],.5);ctx.line
   ctx.textAlign='right';ctx.font='bold 12px monospace';ctx.fillStyle=col(C.cyan,.95);ctx.fillText('TORONTO '+fmtC.format(new Date()).replace(/\s*h\s*/,':'),W-18,top);
   if(S.lastEv){ctx.font='10px monospace';ctx.fillStyle=col(C.txt,.85);ctx.fillText((S.lastEv.intro?'récent ':S.lastEv.replay?'replay ':'NOUVEAU ')+S.lastEv.e.t.slice(11)+' HAE · '+S.lastEv.e.type,W-18,top+15)}
   const pend=S.feed?S.feed.events.filter(e=>(e.pending||[]).length&&e.ts>Date.now()-24*3600000).length:0;
-  ctx.textAlign='left';ctx.font='9px monospace';let lx=18;for(const k of ['DROP','PROMPT','DEMANDE','REPLY','READ','ALERTE']){ctx.fillStyle=col(KIND_C[k],1);ctx.beginPath();ctx.arc(lx+3,H-20,3,0,Math.PI*2);ctx.fill();ctx.fillStyle=col(C.dim,.8);ctx.fillText(k,lx+10,H-17);lx+=ctx.measureText(k).width+22}
+  ctx.textAlign='left';ctx.font='9px monospace';let lx=18;for(const k of ['DROP','PROMPT','DEMANDE','REPLY','READ','WAKE','ALERTE']){ctx.fillStyle=col(KIND_C[k],1);ctx.beginPath();ctx.arc(lx+3,H-20,3,0,Math.PI*2);ctx.fill();ctx.fillStyle=col(C.dim,.8);ctx.fillText(k,lx+10,H-17);lx+=ctx.measureText(k).width+22}
   ctx.textAlign='right';ctx.font='bold 10px monospace';ctx.fillStyle=col(pend?C.orange:C.green,pend?.6+.4*Math.sin(now*.005):.8);ctx.fillText(pend?pend+' message(s) en attente de lecture (24 h)':'tout est lu',W-18,H-17);
   if(S.mode==='LIVE'&&!S.queue.length&&!S.packets.length&&S.feed){ctx.textAlign='center';ctx.font='bold 11px monospace';ctx.fillStyle=col(C.cyan,.45+.35*Math.sin(now*.003));
     const last=S.feed.events.find(e=>e.src==='bridge');ctx.fillText('EN ÉCOUTE DU BRIDGE · dernier message réel '+(last?last.t.slice(11)+' HAE':'—'),W/2,H-42)}
@@ -227,16 +288,18 @@ function fire(it,now){
   if(!passFilter(e))return 30;
   const from=NID[e.from]?e.from:'Gardien'; S.lastEv=it; S.flash[from]=now;
   S.status[from]=(e.kind==='ALERTE'?'ALERTE':e.type)+' '+e.t.slice(11);
-  S.bubbles.push({text:bubbleText(e),sub:(it.fresh?'● NOUVEAU · ':'')+e.t.slice(11)+' HAE',at:from,born:now,c:KIND_C[e.kind]||C.cyan});if(S.bubbles.length>3)S.bubbles.shift();
-  for(const to of targetsOf(e)){const rd=(e.read_by||{})[to];S.packets.push({from,to,kind:e.kind,p:0,speed:.0105+Math.random()*.002,ev:e,readAt:rd?rd.t:null,pending:(e.pending||[]).indexOf(to)>=0})}
+  const uids=S.unread.filter(u=>u.ev===e.id).map(u=>u.id);
+  S.bubbles.push({text:bubbleText(e),sub:(it.fresh?'● NOUVEAU · ':'')+e.t.slice(11)+' HAE'+(uids.length?' · NON LU → clic':'')+(e.wake_label?' · '+e.wake_label:''),at:from,born:now,c:KIND_C[e.kind]||C.cyan,uid:uids[0]});if(S.bubbles.length>3)S.bubbles.shift();
+  for(const to of targetsOf(e)){const rd=(e.read_by||{})[to];S.packets.push({from,to,kind:e.kind,p:0,speed:.0105+Math.random()*.002,ev:e,readAt:rd?rd.t:null,pending:(e.pending||[]).indexOf(to)>=0,uid:S.unread.some(u=>u.id===e.id+'|'+to)?e.id+'|'+to:null,wake:e.type==='WAKE'})}
   if(it.fresh)S.glitch=now+260;
   return it.replay?1700:it.intro?2600:2400}
 let last=performance.now();
-function frame(now){const dt=Math.min(40,now-last);last=now;ctx.fillStyle='rgb(2,8,5)';ctx.fillRect(0,0,W,H);drawRain(dt);drawGrid(now);
+function frame(now){const dt=Math.min(40,now-last);last=now;S.hits=[];ctx.fillStyle='rgb(2,8,5)';ctx.fillRect(0,0,W,H);drawRain(dt);drawGrid(now);
   const pr={};NODES.forEach(n=>pr[n.id]=project(n.pos,now));drawLinks(pr,now);
   [...NODES].sort((a,b)=>pr[b.id].z-pr[a.id].z).forEach(n=>drawNode(n,pr[n.id],now));
   const keep=[];for(const pk of S.packets){pk.p+=pk.speed*(dt/16);if(pk.p<1){keep.push(pk);drawPacket(pk,pr)}else{S.flash[pk.to]=now;
     if(pk.read){S.pops.push({at:pk.to,text:'READ ✓',born:now,c:C.yel})}
+    else if(pk.wake){const wp=S.wakePop&&S.wakePop.to===pk.to?S.wakePop:null;S.pops.push({at:pk.to,text:wp?wp.text:(pk.ev&&pk.ev.wake_label)||'WAKE SENT',born:now,c:wp?wp.c:C.gold});S.status[pk.to]='⚡ '+(wp?wp.text:'WAKE');S.wakePop=null}
     else if(pk.readAt){S.pops.push({at:pk.to,text:'READ ✓ '+pk.readAt,born:now,c:C.yel});S.status[pk.to]='READ'}
     else if(pk.pending){S.pops.push({at:pk.to,text:'REÇU · PENDING',born:now,c:C.orange});S.status[pk.to]='PENDING'}
     else{S.pops.push({at:pk.to,text:'REÇU',born:now,c:C.dim})}}}
@@ -245,6 +308,10 @@ function frame(now){const dt=Math.min(40,now-last);last=now;ctx.fillStyle='rgb(2
   else if(S.mode==='REPLAY'&&!S.queue.length&&!S.packets.length&&S.replayEnd){S.replayEnd=0;setTimeout(goLive,1500)}
   else if(S.mode==='LIVE'&&!S.queue.length&&!S.packets.length&&now>S.nextAt+6000&&S.nextAt){S.nextAt=0;setStatuses()}
   requestAnimationFrame(frame)}
+cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;
+  for(let i=S.hits.length-1;i>=0;i--){const h=S.hits[i];const inR=h.x0!=null?(x>=h.x0&&x<=h.x1&&y>=h.y0&&y<=h.y1):((x-h.x)**2+(y-h.y)**2<=h.r*h.r);if(!inR)continue;
+    if(h.uid){openCard(h.uid);return}if(h.node){const u=S.unread.find(q=>q.to===h.node&&q.measurable);if(u){openCard(u.id);return}}}});
+setInterval(()=>{renderUnread();if(S.cardId)renderCard()},30000);
 requestAnimationFrame(frame);
 poll();setInterval(()=>{if(S.mode==='LIVE'||true)poll()},POLL_MS);
 </script></body></html>
