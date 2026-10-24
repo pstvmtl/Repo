@@ -72,7 +72,10 @@ a{color:rgb(0,245,255)}
 #mp .f a{word-break:break-all;text-decoration:none}
 #mp .nl{display:inline-block;font-weight:bold;font-size:9px;padding:1px 5px;border-radius:8px;background:rgb(255,150,40);color:rgb(0,0,0);margin-left:4px;cursor:pointer}
 #mp .more{cursor:pointer;color:rgb(0,245,255);margin-top:6px;font-weight:bold}
-@media (max-width:600px){#mp{max-height:40vh;font-size:12px}#mp .acts a,#mp .acts button{padding:8px 9px;font-size:11px}}
+@media (max-width:600px){#mp{max-height:30vh;font-size:12px;top:calc(env(safe-area-inset-top) + 76px)}#mp .acts a,#mp .acts button{padding:7px 8px;font-size:11px}
+  #dock{top:auto;bottom:calc(env(safe-area-inset-bottom) + 4px);left:6px;right:6px;transform:none;flex-direction:row;justify-content:center;flex-wrap:wrap;gap:4px}
+  #dock button{padding:5px 6px;font-size:9px}
+  #unread{bottom:calc(env(safe-area-inset-bottom) + 36px);max-height:18vh;width:min(230px,56vw)}}
 </style></head>
 <body>
 <div id="scene"><canvas id="cv"></canvas></div>
