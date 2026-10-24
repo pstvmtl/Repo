@@ -194,21 +194,44 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 .hpr summary{cursor:pointer;list-style:none;font-size:12.5px;line-height:1.5;color:#eafff1}.hpr summary::-webkit-details-marker{display:none}.hpr summary::before{content:'▸ ';color:var(--amb)}.hpr[open] summary::before{content:'▾ '}.hpr summary .dc{margin:0;font-size:11px;padding:1px 5px}.hpr[open]>.h1{margin-top:4px}
 .hpr ol{margin:2px 0 0;padding-left:16px;font-size:11.5px;line-height:1.35;color:#d9ffe6}.hp .ex2{font-size:10px;color:var(--dim);margin-top:4px}
 @media(max-width:520px){.hpr .gr{grid-template-columns:repeat(2,1fr)}}
+/* 2026-10-24 restore-1620 : panneaux RÉCUPÉRER L'IL · frais du jour · positions/ranges */
+.ilr{padding:8px 10px;border-color:var(--g2)!important;box-shadow:0 0 14px #0f63,inset 0 0 14px #0f61}
+.ilr .big{font-size:30px;font-weight:bold;text-align:center;color:var(--g);text-shadow:0 0 8px #0f6a;line-height:1.1}
+.ilr .big small{display:block;font-size:11px;color:var(--dim);font-weight:normal;text-shadow:none}
+.ilbar{position:relative;height:16px;border:1px solid var(--g3);border-radius:8px;background:#001a0a;margin:8px 0 4px;overflow:hidden}
+.ilbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#0a5,#0f6);box-shadow:0 0 10px #0f6}
+.ilbar b{position:absolute;inset:0;text-align:center;font-size:10px;line-height:16px;color:#eaffef;text-shadow:0 0 3px #000}
+.ilg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px}.ilg>div{background:rgba(0,30,12,.6);border:1px solid var(--g3);border-radius:4px;padding:4px 5px}
+.ilg span{display:block;font-size:9.5px;color:var(--dim)}.ilg b{font-size:13px}
+.ftd .r,.pr .r{display:flex;justify-content:space-between;gap:6px;font-size:11.5px;padding:2px 0;border-bottom:1px dashed #0a3d1f88}
+.ftd .r:last-child{border-bottom:0}.ftd .tot{font-size:16px;font-weight:bold;text-align:right;color:var(--g)}
+.pcard{background:rgba(0,18,7,.75);border:1px solid var(--g3);border-left:3px solid var(--g);border-radius:5px;padding:5px 7px;margin-bottom:5px}
+.pcard.oor{border-left-color:var(--amb)}.pcard .t{display:flex;justify-content:space-between;font-size:12px;font-weight:bold}
+.pcard .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:3px}.pcard .g4 span{display:block;font-size:9px;color:var(--dim)}.pcard .g4 b{font-size:12px}
+.prg{position:relative;height:8px;background:#001a0a;border:1px solid var(--g3);border-radius:4px;margin:5px 0 2px}
+.prg .in{position:absolute;top:0;bottom:0;background:#0f63;border-left:1px solid var(--g);border-right:1px solid var(--g)}
+.prg .cu{position:absolute;top:-3px;width:2px;height:12px;background:#fff;box-shadow:0 0 4px #fff}
+.pcard .lb{display:flex;justify-content:space-between;font-size:9.5px;color:var(--dim)}
+.oth{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:5px}
 </style></head><body><canvas id="rain"></canvas><button id="xclose" type="button" aria-label="Fermer la page" title="Fermer" onclick="closePage()">✕</button><main>
-<header><h1><i class="live"></i><span id="ttl">▓ CHASER · MATRIX FARM</span><small id="clock">connexion…</small></h1>
+<header><h1><i class="live"></i><span id="ttl">▓ CHASER · RÉCUPÉRER L'IL</span><small id="clock">connexion…</small></h1>
 <div><a id="bur" href="bureau" style="display:inline-block;margin-right:6px;padding:4px 8px;border:1px solid var(--g3);border-radius:6px;color:var(--g);text-decoration:none;font-size:11px">▣ BUREAU 3D</a><button id="rf" onclick="refresh()">⟳ REFRESH</button><div id="rfi">—</div></div><div class="sb" id="sb"></div></header>
 <div class="chips" id="chips"></div><div class="hexs" id="hexs" aria-hidden="true"></div>
 <div class="warn" id="warn"></div>
+<div class="sec"><span>◆ OBJECTIF Nº1 · RÉCUPÉRER L'IL (frais vs IL/LVR cumulés)</span><span class="s" id="ilts"></span></div><div class="box ilr" id="ilr"></div>
 <div class="sec"><span>◇ OBJECTIF · P&amp;L vs capital net → 0 puis +</span><span id="racets"></span></div>
 <div class="race" id="race"></div>
+<div class="sec"><span>◇ FRAIS GÉNÉRÉS AUJOURD'HUI (depuis 00:00 Toronto)</span><span class="s" id="ftdts"></span></div><div class="box ftd" id="ftd"></div>
+<div class="sec"><span>◇ POSITIONS · P&amp;L vs entrée / vs hold · RANGES · PLANCHERS</span><span class="s">prix courant · distance aux bords · temps hors plage</span></div><div class="pr" id="pr"></div>
+<div class="sec"><span>◇ À SURVEILLER · Multiply · 707 · plus serrés</span></div><div class="oth" id="oth"></div>
 <div class="top" id="top"></div>
 <div id="hpw" style="display:none"><div class="sec"><span>⚠ HORS PLAGE — décision · attente · échéance · prochains moves</span><span class="s" id="hpts"></span></div><div class="box hp" id="hp"></div></div>
-<div class="sec"><span>◇ JOURNAL / RÉALISÉ — chaque move : coût · gain · vs hold</span><span class="tog"><button class="jbtn" id="jall" onclick="jAll()">＋ tout</button></span></div><div class="box" id="jr"></div>
 <div class="sec"><span>◇ TOP 5 — positions qui rapportent le plus</span><span class="s" id="t5ts">tri : frais USD / jour · re-classé à chaque refresh</span></div><div class="box t5" id="t5"></div>
 <div class="sec"><span>◇ 24 H · TENDANCE</span><span class="s">anneau 24 h côté serveur</span></div><div class="spk" id="spk"></div>
 <div class="sec"><span>◇ LES PLUS SERRÉS (marge au kill doux, USD)</span><span class="s">🟢 &gt; 4 % de l'entrée · 🟠 2–4 % · 🔴 &lt; 2 % (= 4 / 2 $ sur un test de 100)</span></div><div class="tight" id="tight"></div>
 <div class="sec"><span>◇ PARCELLES</span><span class="tog">tri : <button id="t1" onclick="setSort('book')">par livre</button> <button id="t2" onclick="setSort('kill')">marge kill</button></span></div>
 <div id="plots"></div>
+<div class="sec"><span>◇ JOURNAL / RÉALISÉ — chaque move : coût · gain · vs hold</span><span class="tog"><button class="jbtn" id="jall" onclick="jAll()">＋ tout</button></span></div><div class="box" id="jr"></div>
 <div class="sec"><span>◇ SILOS (hors LP)</span></div><div class="box silos" id="silos"></div>
 <div class="sec"><span>◇ FLUX D'ALERTES</span></div><div class="box feed" id="feed"></div>
 <div class="ft">Lecture seule · aucune clé · aucune signature. <b>MES</b> = MESURÉ (on-chain / moniteur) · <b class="amb">HYP</b> = HYPOTHÈSE (registre, horaire, déclaré). Heures : Toronto. « PÉRIMÉ » n'apparaît que si une donnée dépasse le seuil de SA source (collecteur 3 min, Livre B 7 min, moniteur Tests 500 35 min, C1 65 min, TOTAL 25 min).</div>
@@ -216,7 +239,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.24-1551-a871';
+const APP_VER='2026.10.24-1627-e7fd';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -282,7 +305,7 @@ el.textContent=hx();setInterval(()=>{if(!document.hidden)el.textContent=hx()},11
 const TZ='America/Toronto',$=id=>document.getElementById(id);
 const _F=new Intl.DateTimeFormat('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});const tT=(t,s)=>{if(!t)return'—';const x=_F.format(t);return s?x:x.slice(0,5)};
 const f=(v,d=2,s=false)=>v==null||!isFinite(v)?'—':(v<0?'−':s&&v>0?'+':'')+Math.abs(v).toLocaleString('fr-CA',{minimumFractionDigits:d,maximumFractionDigits:d}).replace(/\u202f|\u00a0/g,' ');
-const pd=v=>v==null?'':v>=1000?0:v>=10?2:v>=1?3:4;
+const pd=v=>v==null?'':v>=1000?0:v>=10?2:v>=1?3:v>=0.01?4:6;
 const H=t=>t&&t.startsWith('H');const tg=t=>`<span class="tag ${H(t)?'H':''}">${H(t)?'HYP':'MES'}</span>`;
 const cls=v=>v==null?'':v<0?'neg':'pos';
 const ago=s=>s==null?'—':s<90?Math.round(s)+' s':s<5400?Math.round(s/60)+' min':f(s/3600,1)+' h';
@@ -426,7 +449,37 @@ el.innerHTML=`<div class="sbp ch ${pnl>=0?'ld':''}"><div class="nmx"><span>TOTAL
 <div class="pb"><div class="z" style="left:${z}%"></div><i class="${pnl<0?'ng':''}" style="left:${a}%;width:${w}%"></i><div class="fl"></div></div>
 <div class="sv">vs capital net</div></div>`;
 document.title=`P&L ${f(pnl,2,true)} · total ${f(o.total)} · gap ${f(gap)}`}
+// 2026-10-24 restore-1620 : RÉCUPÉRER L'IL · frais du jour · positions/ranges · à surveiller
+const te=t=>t==='ESTIM.'||t==='PARTIEL'?`<span class="tag H">${t==='PARTIEL'?'PART.':'ESTIM.'}</span>`:tg(t||'MESURÉ');
+function ilView(){const X=D.xr;if(!X||X.err)return`<div class="s">données IL indisponibles ${X&&X.err?esc(X.err):''}</div>`;
+const A=X.il_all,O=X.il_open,C=X.il_closed,pc=A.pct;const w=pc==null?100:Math.max(0,Math.min(100,pc));
+const sub=(k,r,n)=>`<div><span>${k} · ${n} pos.</span><b class="${r.pct!=null&&r.pct>=100?'pos':'amb'}">${r.pct!=null?f(r.pct,1)+' %':'✓ pas d\'IL'}</b><span>IL ${f(-r.lost)} · frais ${f(r.fees)} · net <span class="${cls(r.net)}">${f(r.net,2,true)}</span></span></div>`;
+return`<div class="big">${pc!=null?f(pc,1)+' %':'—'}<small>de l'IL/LVR cumulé déjà récupéré par les frais ${tg('HYPOTHÈSE')}</small></div>
+<div class="ilbar"><i style="width:${w}%"></i><b>${f(A.fees)} $ de frais / ${f(A.lost)} $ d'IL · ${A.left>0?'reste '+f(A.left)+' $ à récupérer':'IL entièrement récupéré (+'+f(A.net)+' $)'}</b></div>
+<div class="ilg">${sub('Ouvertes',O,O.n)}${sub('Fermées',C,C.n)}<div><span>Frais aujourd'hui</span><b class="pos">+${f(X.fees_today.total)} $</b><span>${X.fees_today.n_est?X.fees_today.n_est+' ESTIM.':'MESURÉ fee growth'}</span></div></div>
+<div class="s" style="margin-top:4px">IL = valeur hors frais − hold (jetons d'ouverture au prix live) · ouvertes : LP avec hold mesurable (Livre B Hrn8 sans hold : exclu) · fermées : ledger (vs hold − frais) · relevé ${tT(X.ts,1)} Toronto</div>`}
+function ftdView(){const X=D.xr;if(!X||X.err)return'—';const rs=X.positions.filter(r=>r.fee_today!=null).sort((a,b)=>b.fee_today-a.fee_today);
+return rs.map(r=>`<div class="r"><span>${esc(r.name.slice(0,40))}</span><span><b class="pos">+${f(r.fee_today,3)}</b> ${te(r.fee_today_tag)}</span></div>`).join('')+
+`<div class="tot">TOTAL +${f(X.fees_today.total)} $ <span class="s">${X.fees_today.n_est?'(dont ESTIM.)':''}</span></div><div class="s">MESURÉ = frais non collectés maintenant − à 00:00 (fee growth on-chain, collectes détectées) · ESTIM. = vitesse moyenne × heures écoulées</div>`}
+function prView(){const X=D.xr;if(!X||X.err)return'—';const KEY=['CJr5rAbD','HAB59XoK','T10_SOLUSDC5','T11_SOLWBTC'];
+const rs=[...X.positions].sort((a,b)=>(a.inrange===false?-1:0)-(b.inrange===false?-1:0)||(KEY.indexOf(b.id)>-1)-(KEY.indexOf(a.id)>-1)||(b.value||0)-(a.value||0));
+return rs.map(r=>{let rg='';if(r.lo!=null&&r.hi!=null&&r.cur!=null){const a=Math.min(r.lo,r.cur),b=Math.max(r.hi,r.cur),W=(b-a)*1.1||1,o=a-(b-a)*.05,P=v=>(v-o)/W*100;
+rg=`<div class="prg"><div class="in" style="left:${P(r.lo)}%;width:${P(r.hi)-P(r.lo)}%"></div><div class="cu" style="left:${P(r.cur)}%"></div></div>
+<div class="lb"><span>${f(r.lo,pd(r.lo))} (${r.d_lo!=null?(r.d_lo>=0?'↓ '+f(r.d_lo,2)+' %':'<b class="amb">sous le bas '+f(-r.d_lo,2)+' %</b>'):'—'})</span><span>${f(r.cur,pd(r.cur))} ${esc(r.unit||'')}</span><span>(${r.d_hi!=null?(r.d_hi>=0?'↑ '+f(r.d_hi,2)+' %':'<b class="amb">au-dessus '+f(-r.d_hi,2)+' %</b>'):'—'}) ${f(r.hi,pd(r.hi))}</span></div>`}
+const st=r.lo==null?'':r.inrange===false?`<span class="ir n">HORS PLAGE ${r.oor_h!=null?hpDur(r.oor_h):''}</span>`:'<span class="ir y">EN PLAGE</span>';
+const fl=r.floor!=null?`doux ${f(r.floor)} <span class="${cls(r.dist_kill)}">(${f(r.dist_kill,2,true)})</span>${r.floor_hard!=null?` · dur ${f(r.floor_hard)} <span class="${cls(r.dist_hard)}">(${f(r.dist_hard,2,true)})</span>`:''}`:'<span class="amb">aucun kill publié</span>';
+return`<div class="pcard ${r.inrange===false?'oor':''}"><div class="t"><span>${esc(r.name.slice(0,44))}</span><span>${st}${tg(r.tag)}</span></div>
+<div class="g4"><div><span>valeur</span><b>${f(r.value)}</b></div><div><span>P&amp;L vs entrée</span><b class="${cls(r.pnl)}">${f(r.pnl,2,true)}</b></div>
+<div><span>vs hold</span><b class="${cls(r.vs_hold)}" title="${esc(r.il_src||'')}">${r.vs_hold!=null?f(r.vs_hold,2,true):'—'}</b></div><div><span>IL · frais</span><b><span class="${cls(r.il)}">${r.il!=null?f(r.il,2,true):'—'}</span> · ${f(r.fees,2)}</b></div></div>
+${rg}<div class="lb"><span>plancher ${fl}</span><span>auj. ${r.fee_today!=null?'+'+f(r.fee_today,3):'—'}</span></div></div>`}).join('')}
+function othView(){const X=D.xr||{},t=D.top||{},M=X.multiply||{};const s7=X.s707||D.s707;const oor=(X.positions||[]).filter(r=>r.inrange===false);
+const tiles=[[`Multiply HF ${te('ESTIM.')}`,M.hf!=null?`<span class="${M.hf<1.2?'neg':M.hf<1.25?'amb':'pos'}">${f(M.hf,3)}</span>`:'—',`BTC ${f(M.btc,0)} · ${esc(M.how||'')}`],
+[`707 USDC ${tg((s7&&s7.label)||'HYPOTHÈSE')}`,s7?`<span style="font-size:12px">${esc(s7.txt||'')}</span>`:'probe en attente',s7&&s7.ts_ms?'relevé '+tT(s7.ts_ms,1)+' · '+esc(s7.src||''):'s707_probe.py (10 min)'],
+[`Hors plage ${tg('MESURÉ')}`,`<span class="${oor.length?'amb':'pos'}">${oor.length}</span>`,oor.map(r=>esc(r.name.slice(0,22))+' '+(r.oor_h!=null?hpDur(r.oor_h):'')).join(' · ')||'toutes en plage'],
+[`ZEC · SOL · BTC ${tg('MESURÉ')}`,`<span style="font-size:14px">${f((t.px||{}).ZEC,0)} · ${f((t.px||{}).SOL,2)} · ${f(((t.px||{}).BTC||0)/1000,1)}k</span>`,'prix on-chain du collecteur · '+tT(t.px_ts,1)]];
+return tiles.map(([k,v,s])=>`<div class="box"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('')}
 function render(){if(!D)return;const t=D.top,now=Date.now();if(t.title){$('ttl').textContent='▓ '+t.title;document.title=t.title}
+try{$('ilr').innerHTML=ilView();$('ilts').textContent=D.xr&&D.xr.ts?'relevé '+tT(D.xr.ts,1):'';$('ftd').innerHTML=ftdView();$('ftdts').textContent=D.xr&&D.xr.m0?'depuis '+tT(D.xr.m0,1):'';$('pr').innerHTML=prView();$('oth').innerHTML=othView()}catch(e){$('ilr').textContent='erreur rendu : '+e.message}
 $('race').innerHTML=objView(t.objective||{});objSB(t.objective||{});$('racets').textContent=(t.objective&&t.objective.toronto)||('live '+tT(t.px_ts,1));
 const until=t.kill_mode&&t.kill_mode.until;
 const gap=t.live_gap;
