@@ -353,7 +353,7 @@ function avatarTap(who){const st=tapStep(who);
 async function readFlow(who){if(RD[who]&&RD[who].busy)return;const url=wakeURL(),now=performance.now();
   const un=S.unread.filter(u=>u.to===who&&u.wakeable&&u.measurable).sort((a,b)=>b.ts-a.ts).slice(0,6);
   if(!un.length){RD[who]={sum:'rien de non lu · '+hm(Date.now())+' HAE'};S.pops.push({at:who,text:'À JOUR ✓',born:now,c:C.green});renderMP();return}
-  if(!url){RD[who]={sum:'réveil indisponible hors tunnel · '+un.length+' non lu(s) restent NON LUS'};S.pops.push({at:who,text:'⚠ hors tunnel',born:now,c:C.orange});renderMP();return}
+  if(!url){RD[who]={sum:'réveil indisponible hors tunnel · ses non-lus restent NON LUS (liens Drive OK)'};S.pops.push({at:who,text:'⚠ hors tunnel',born:now,c:C.orange});renderMP();return}
   RD[who]={busy:true};S.status[who]='LECTURE…';S.flash[who]=now;S.trips.push({who,born:now});
   S.bubbles.push({text:(NID[who].ab+' → BRIDGE · LECTURE… '+un.length+' fichier(s)').slice(0,40),sub:'réveil réel · '+hm(Date.now())+' HAE',at:who,born:now,c:NID[who].c});if(S.bubbles.length>3)S.bubbles.shift();
   renderMP();const cnt={};
