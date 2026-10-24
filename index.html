@@ -36,7 +36,7 @@ ul{margin:4px 0 0;padding-left:18px}li{margin:3px 0;font-size:13.5px;color:#eaff
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.24-1524-ccd5';
+const APP_VER='2026.10.24-1551-a871';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -124,7 +124,7 @@ const A=[];const btc=t.px&&t.px.BTC;if(btc){const hf=1.28*btc/82285;A.push([hf<1
 const under=(D.tight||[]).filter(x=>x.dist!=null&&x.dist<0);under.forEach(x=>A.push(['r',`${short(x.name)} sous son plancher : ${f(x.dist,2,true)} $ (${f(x.pct,1,true)} %) ${tg(x.tag)}`]));
 (D.plots||[]).filter(x=>x.kill_breach&&!under.find(u=>u.id===x.id)).forEach(x=>A.push(['r',`${short(x.name)} : plancher doux franchi (${x.kill_confirm||''})`]));
 if(!under.length)A.push(['','Aucune position sous son plancher']);
-A.push(['a',S707.txt+' <span class="s">(relevé '+S707.ts+')</span>']);
+{const s7=D.s707&&D.s707.txt?{txt:D.s707.txt,ts:tT(D.s707.ts_ms)+' HAE'}:S707;A.push(['a',s7.txt+' <span class="s">(relevé '+s7.ts+')</span>'])}
 $('al').innerHTML=A.map(a=>`<li class="${a[0]}">${a[1]}</li>`).join('');
 $('foot').textContent='données on-chain · total defi_total.py '+tT(o.total_ts||t.total_ts)+' HAE · serveur '+tT(D.server_ts)+' HAE · ESTIM. = hypothèse · version complète : full.html';
 if((now-D.server_ts)/1000>150)$('foot').textContent+=' · ⚠ page non rafraîchie depuis '+Math.round((now-D.server_ts)/60000)+' min';}
