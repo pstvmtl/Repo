@@ -239,7 +239,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.24-1627-e7fd';
+const APP_VER='2026.10.24-1627-7578';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;

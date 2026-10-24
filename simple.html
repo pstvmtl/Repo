@@ -1,0 +1,133 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#000"><link rel="apple-touch-icon" href="assets/chaser-icon-180.png"><link rel="icon" type="image/png" href="assets/chaser-icon-192.png"><meta name="apple-mobile-web-app-title" content="Chaser"><meta name="apple-mobile-web-app-status-bar-style" content="black"><title>CHASER · HUD</title><!-- v9 2026-10-24 15:30 EDT : HUD simplifié (version complète : full.html) -->
+<style>
+:root{--g:#00ff66;--dim:#8fe8b0;--g3:#0a3d1f;--red:#ff5555;--amb:#ffcc00;--mo:#36c6ff}
+*{box-sizing:border-box}html,body{margin:0;background:#000;color:var(--g);font:15px/1.4 "Courier New",ui-monospace,Menlo,monospace}
+#rain{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;opacity:.35;pointer-events:none}
+main{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 10px) 10px 50px}
+.card{background:rgba(0,6,2,.88);border:1px solid var(--g3);border-radius:10px;padding:10px 12px;margin:0 0 10px;box-shadow:0 0 12px #0f61}
+h1{font-size:14px;letter-spacing:3px;margin:0 56px 8px 0;color:var(--dim)}h1 b{color:var(--g);text-shadow:0 0 6px var(--g)}
+.k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.big{font-size:40px;font-weight:bold;color:#eafff1;text-shadow:0 0 10px var(--g);line-height:1.1}
+.mid{font-size:26px;font-weight:bold}.s{font-size:11.5px;color:var(--dim)}
+.pos{color:var(--g)}.neg{color:var(--red)}.amb{color:var(--amb)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bar{height:8px;background:#111;border-radius:4px;overflow:hidden;margin:6px 0 2px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#f55,#fc0,#0f6)}
+.tag{font-size:9px;border:1px solid currentColor;border-radius:4px;padding:0 3px;margin-left:4px;vertical-align:middle;color:var(--dim)}.tag.H{color:var(--amb)}
+table{width:100%;border-collapse:collapse;font-size:13px}th{font-size:10px;color:var(--dim);text-align:right;font-weight:normal;padding:2px 3px}th:first-child,td:first-child{text-align:left}
+td{padding:6px 3px;border-top:1px dotted var(--g3);text-align:right;color:#eafff1}td .n{font-weight:bold}td small{display:block;color:var(--dim);font-size:10px}
+.ir{font-size:10px;padding:0 4px;border-radius:4px;border:1px solid}.ir.y{color:var(--g)}.ir.n{color:var(--amb)}
+ul{margin:4px 0 0;padding-left:18px}li{margin:3px 0;font-size:13.5px;color:#eafff1}li.r{color:#ffb3b3}li.a{color:#ffe28a}
+#xclose{position:fixed;z-index:60;top:calc(env(safe-area-inset-top) + 6px);right:calc(env(safe-area-inset-right) + 8px);width:46px;height:46px;border-radius:10px;border:1.5px solid var(--red);background:rgba(20,0,0,.9);color:#fff;font:bold 24px/1 "Courier New",monospace;cursor:pointer;box-shadow:0 0 10px #f446;padding:0}
+#xclose:active{transform:scale(.94)}a{color:var(--mo)}
+@media(max-width:480px){.big{font-size:32px}.mid{font-size:21px}table{font-size:12px}}
+</style></head><body><canvas id="rain"></canvas><button id="xclose" type="button" aria-label="Fermer" onclick="closePage()">✕</button><main>
+<h1><b>▓ CHASER · HUD</b> <span id="clock">—</span></h1>
+<div class="card"><div class="k">Total DeFi on-chain <span id="ttag"></span></div><div class="big" id="tot">—</div>
+<div class="mid" id="pnl">—</div><div class="s" id="cap">—</div>
+<div class="bar"><i id="pbar" style="width:0"></i></div><div class="s" id="obj">Objectif commun : revenir à 0, puis positif</div></div>
+<div class="grid2"><div class="card"><div class="k">Frais / jour <span class="tag H">ESTIM.</span></div><div class="mid pos" id="fday">—</div><div class="s" id="fdays">Σ top 5 (frais cumulés ÷ âge)</div></div>
+<div class="card"><div class="k">Réalisé aujourd'hui</div><div class="mid" id="real">—</div><div class="s" id="reals">—</div></div></div>
+<div class="card"><div class="k">Top 5 · positions qui rapportent le plus</div><table><thead><tr><th>position</th><th>valeur</th><th>P&amp;L vs hold</th><th>plage</th><th>marge plancher dur</th></tr></thead><tbody id="t5"></tbody></table>
+<div class="s" style="margin-top:4px">tri : frais/jour · P&amp;L vs hold seulement si mesuré (sinon P&amp;L vs entrée, marqué « entr. »)</div></div>
+<div class="card"><div class="k">Alertes</div><ul id="al"></ul></div>
+<div class="s" id="foot">données on-chain · defi_total.py (10 min) + collecteur (30 s) · ESTIM. = hypothèse</div>
+</main><script>
+// ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
+// Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
+// #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
+const APP_VER='2026.10.24-1627-7578';
+const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
+const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
+let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
+const s_b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+function s_tf(u,ms,o){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);o=o||{};o.signal=c.signal;return fetch(u,o).finally(()=>clearTimeout(t))}
+async function s_key(){if(S_KEY)return S_KEY;const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('chaser-hud-static-v1:'+S_TOK));return S_KEY=await crypto.subtle.importKey('raw',h,'AES-GCM',false,['decrypt'])}
+async function s_dec(j){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:s_b64(j.n)},await s_key(),s_b64(j.c));let b=new Blob([pt]);
+  if(j.z){if(!('DecompressionStream' in window))throw new Error('navigateur trop ancien (iOS ≥ 16.4 requis)');b=await new Response(b.stream().pipeThrough(new DecompressionStream('gzip'))).blob()}
+  return JSON.parse(await b.text())}
+async function s_static(){const now=Date.now();
+  if(now>S_apiBlock&&now-S_lastApi>=75000){S_lastApi=now;try{const r=await s_tf(S_API,10000,{cache:'no-cache',headers:{Accept:'application/vnd.github.raw'}});
+      if(r.ok)return[await r.json(),'GitHub'];if(r.status==403||r.status==429)S_apiBlock=now+15*60000}catch(e){}}
+  const r=await s_tf(S_RAW+'?n='+now,10000,{cache:'no-store'});if(r.ok)return[await r.json(),'GitHub (cache ≤5 min)'];throw new Error('instantané injoignable')}
+async function s_live(){ // optionnel, coûte 1 requête ; silencieux si le tunnel est mort
+  const now=Date.now();if(!S_origin||now-S_lastPtr>120000){S_lastPtr=now;try{const p=await(await s_tf('pointer.json?n='+now,6000,{cache:'no-store'})).json();if(/^https:\/\/[a-z0-9.-]+$/.test(p.origin||''))S_origin=p.origin}catch(e){}}
+  if(!S_origin)return null;try{const r=await s_tf(S_origin+'/t/'+S_TOK+'/api/matrix',7000,{cache:'no-store',mode:'cors',credentials:'omit'});if(r.ok)return await r.json()}catch(e){}return null}
+async function s_ver(){try{const v=await(await s_tf('version.json?n='+Date.now(),6000,{cache:'no-store'})).json();
+  if(v.ver&&v.ver!==APP_VER&&APP_VER.indexOf('test-')!==0){let k='';try{k=sessionStorage.getItem('hud_vtry')||''}catch(e){}const[kv,kt]=k.split('|');if(kv===v.ver&&Date.now()-(+kt||0)<180000)return;try{sessionStorage.setItem('hud_vtry',v.ver+'|'+Date.now())}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(v.ver)+location.hash)}}catch(e){}}
+async function sLoad(force){if(S_busy)return;S_busy=true;try{
+  if(!/^[A-Za-z0-9_-]{20,}$/.test(S_TOK)){S_err='jeton absent : ouvre le lien complet (avec #) une fois';return}
+  s_ver();
+  const [st,lv]=await Promise.allSettled([s_static().then(async([j,src])=>[await s_dec(j),src,j.ts]),s_live()]);
+  let best=null,src='',err='';
+  if(st.status==='fulfilled'){best=st.value[0];src=st.value[1]}else err=String(st.reason&&st.reason.message||st.reason);
+  if(lv.status==='fulfilled'&&lv.value&&(!best||lv.value.server_ts>=best.server_ts)){best=lv.value;src='LIVE tunnel'}
+  if(best&&(!D||best.server_ts>=D.server_ts)){D=best;S_ts=best.server_ts;S_src=src;S_err='';lastRefresh=Date.now();render()}
+  else if(!best){S_err=err.indexOf('operation')>=0||err.indexOf('decrypt')>=0?'déchiffrement impossible (jeton ?)':err}
+  const b=document.getElementById('bur');if(b){if(S_origin){b.href=S_origin+'/t/'+S_TOK+'/bureau';b.style.display=''}else b.style.display='none'}
+}catch(e){S_err=String(e&&e.message||e)}finally{S_busy=false;s_badge()}}
+function s_badge(){let e=document.getElementById('sbadge');if(!e){e=document.createElement('div');e.id='sbadge';
+  e.style.cssText='position:fixed;left:calc(env(safe-area-inset-left) + 6px);bottom:calc(env(safe-area-inset-bottom) + 6px);z-index:60;font:11px/1.35 ui-monospace,Menlo,monospace;padding:4px 8px;border-radius:6px;background:#000d;border:1px solid;max-width:92vw;pointer-events:none';document.body.appendChild(e);document.body.style.paddingBottom='calc(env(safe-area-inset-bottom) + 40px)'}
+  const age=S_ts?(Date.now()-S_ts)/1000:null,hm=S_ts?new Date(S_ts).toLocaleTimeString('fr-CA',{timeZone:'America/Toronto',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).replace(' h ',':'):'—';
+  let c='#00ff66',m;if(!S_ts){c='#ff4455';m='⚠ '+(S_err||'chargement…')}
+  else if(age>300){c='#ffb000';m='⚠ dernière mise à jour '+hm+' HAE ('+Math.round(age/60)+' min) — box figée ?'}
+  else m='● dernière mise à jour '+hm+' HAE · '+S_src;
+  e.style.color=c;e.style.borderColor=c+'88';e.textContent=m+' · v'+APP_VER}
+setInterval(s_badge,15000);
+// ===== fin HUD statique =====
+
+
+// ── pluie Matrix (canvas plein écran, derrière les données) : rAF ~24 i/s, pause si onglet caché, DPR ≤ 2 (iPhone) ──
+function matrixRain(){const cv=document.getElementById('rain');if(!cv||!cv.getContext)return;const cx=cv.getContext('2d',{alpha:false});
+const CHS='ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ01010110ABCDEF₿Ξ◎$ZECSOL';
+let W=0,Hh=0,fs=15,cols=[],last=0;const red=matchMedia('(prefers-reduced-motion: reduce)').matches,SP=red?.45:1;
+function size(){const w=innerWidth,h=Math.max(innerHeight,screen.height||0);const dpr=Math.min(devicePixelRatio||1,2);
+if(w===W&&h<=Hh)return;const keep=w===W;W=w;Hh=h;fs=w<520?14:16;cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+'px';cv.style.height=h+'px';cx.setTransform(dpr,0,0,dpr,0,0);
+cx.fillStyle='#000';cx.fillRect(0,0,w,h);if(!keep||!cols.length)cols=Array.from({length:Math.ceil(w/fs)},()=>({y:Math.random()*-h/fs,v:.45+Math.random()*.7,c:Math.random()<.12}))}
+size();let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(size,200)});
+const pick=()=>CHS[Math.random()*CHS.length|0];
+let run=false;function frame(t){if(document.hidden){run=false;return}requestAnimationFrame(frame);if(t-last<42)return;last=t;
+cx.fillStyle='rgba(0,0,0,.07)';cx.fillRect(0,0,W,Hh);cx.font=fs+'px "Courier New",monospace';
+for(let i=0;i<cols.length;i++){const d=cols[i],x=i*fs,y=Math.floor(d.y)*fs;
+if(d.y>=1){cx.fillStyle=d.c?'#1fa8d8':'#00d455';cx.fillText(pick(),x,y-fs)}
+cx.fillStyle=d.c?'#bff0ff':'#d6ffe4';cx.fillText(pick(),x,y);
+d.y+=d.v*SP;if(y>Hh&&Math.random()>.97){d.y=0;d.v=.45+Math.random()*.7;d.c=Math.random()<.12}}}
+// v7 : la pluie tombe toujours (réduction de mouvement = plus lente, pas figée) ; relance auto si iOS a suspendu rAF
+const go=()=>{if(!document.hidden&&(!run||performance.now()-last>1500)){run=true;requestAnimationFrame(frame)}};
+run=true;requestAnimationFrame(frame);document.addEventListener('visibilitychange',go);addEventListener('pageshow',go);addEventListener('focus',go);setInterval(go,2000)}
+matrixRain();
+
+const TZ='America/Toronto',$=id=>document.getElementById(id);let D=null,lastRefresh=0,inflight=false;
+const _F=new Intl.DateTimeFormat('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});const tT=t=>t?_F.format(t):'—';
+const f=(v,d=2,s=false)=>v==null||!isFinite(v)?'—':(v<0?'−':s&&v>0?'+':'')+Math.abs(v).toLocaleString('fr-CA',{minimumFractionDigits:d,maximumFractionDigits:d}).replace(/\u202f|\u00a0/g,' ');
+const cls=v=>v==null?'':v<0?'neg':'pos';const tg=t=>t&&t.startsWith('H')?'<span class="tag H">ESTIM.</span>':'<span class="tag">MES.</span>';
+const short=n=>(n||'').replace(/\s*\((?:89WY|GO)[^)]*\)/,'').replace('Orca ','').replace(' · HAB59','').replace('LPA (Monee) · ','');
+const INFRAME=(()=>{try{return window.top!==window.self}catch(e){return true}})();
+function closePage(){if(INFRAME){try{parent.postMessage('hud-close','*')}catch(e){}return}try{window.close()}catch(e){}setTimeout(()=>{if(document.visibilityState==='hidden')return;if(history.length>1)history.back();else location.href='about:blank'},300)}
+// statut 707 USDC : relevé on-chain par Chaser (USDC Ethereum de 0xc428 + ATA USDC du LPA)
+const S707={ts:'15:22 HAE',txt:'707 USDC : partis de 0xc428 (Ethereum = 0). Pontés vers le LPA : 353,37 à 15:07 → swappés en WBTC à 15:17 (S1 SOL/WBTC en cours, Monee) ; 353,40 USDC arrivés 15:20, encore en USDC.'};
+function render(){if(!D)return;const t=D.top||{},o=t.objective||{},now=Date.now();
+$('clock').textContent='· '+tT(now)+' HAE';
+$('tot').textContent=f(o.total!=null?o.total:t.total)+' $';$('ttag').innerHTML='<span class="tag">MES.</span> · relevé '+tT(o.total_ts||t.total_ts)+' HAE';
+const p=o.pnl!=null?o.pnl:t.pnl,pp=o.pnl_pct!=null?o.pnl_pct:t.pnl_pct;$('pnl').innerHTML=`<span class="${cls(p)}">${f(p,2,true)} $ (${f(pp,2,true)} %)</span> <span class="s">vs capital net</span>`;
+$('cap').textContent='capital net déposé '+f(o.capital!=null?o.capital:t.capital)+' $';
+const cap=o.capital||t.capital,tot=o.total||t.total;if(cap&&tot)$('pbar').style.width=Math.max(0,Math.min(100,tot/cap*100))+'%';
+$('obj').innerHTML=p!=null&&p<0?`Objectif commun : revenir à 0 — <b class="amb">reste ${f(-p)} $</b> (${f(tot/cap*100,1)} % du capital récupéré)`:`Objectif atteint : <b class="pos">+${f(p)} $ au-dessus de 0</b>`;
+const R=(D.top5&&D.top5.rows)||[];const fd=R.reduce((a,r)=>a+(r.fees_day||0),0);$('fday').textContent='+'+f(fd)+' $';
+const L=(D.ledger&&D.ledger.totals)||{};$('real').innerHTML=`<span class="${cls(L.realized_today)}">${f(L.realized_today,2,true)} $</span>`;$('reals').textContent='réalisé depuis le 17 oct. : '+f(L.realized_all,2,true)+' $';
+const PL={},LG={},TI={};(D.plots||[]).forEach(x=>PL[x.id]=x);((D.ledger&&D.ledger.rows)||[]).forEach(x=>{if(x.status==='ouverte')LG[x.id]=x});(D.tight||[]).forEach(x=>TI[x.id]=x);
+$('t5').innerHTML=R.map((r,i)=>{const pl=PL[r.id]||{},lg=LG[r.id]||{},val=pl.value!=null?pl.value:lg.value;
+let vh=lg.vs_hold,vhs='vs hold';if(vh!=null&&val&&Math.abs(vh)>val*.25)vh=null;if(vh==null){vh=r.pnl;vhs='entr.'}
+const dh=pl.dist_hard!=null?pl.dist_hard:(TI[r.id]?TI[r.id].dist:null);const ir=r.inrange===false?'<span class="ir n">HORS</span>':r.inrange?'<span class="ir y">OK</span>':'—';
+return`<tr><td><span class="n">${i+1}. ${short(r.name)}</span><small>${r.group||''} · ${f(r.fees_day)} $/j ${tg(r.tag)}</small></td><td>${f(val)}</td><td class="${cls(vh)}">${f(vh,2,true)}<small>${vhs}</small></td><td>${ir}</td><td class="${dh!=null&&dh<0?'neg':''}">${dh!=null?f(dh,2,true):'—'}</td></tr>`}).join('')||'<tr><td colspan="5">aucune position</td></tr>';
+const A=[];const btc=t.px&&t.px.BTC;if(btc){const hf=1.28*btc/82285;A.push([hf<1.2?'r':hf<1.25?'a':'',`Multiply Jupiter : HF ≈ ${f(hf,3)} <span class="tag H">ESTIM.</span> (1,28 × BTC ${f(btc,0)} / 82 285) · alerte L3 à BTC 77 175 (HF 1,20)`])}
+const under=(D.tight||[]).filter(x=>x.dist!=null&&x.dist<0);under.forEach(x=>A.push(['r',`${short(x.name)} sous son plancher : ${f(x.dist,2,true)} $ (${f(x.pct,1,true)} %) ${tg(x.tag)}`]));
+(D.plots||[]).filter(x=>x.kill_breach&&!under.find(u=>u.id===x.id)).forEach(x=>A.push(['r',`${short(x.name)} : plancher doux franchi (${x.kill_confirm||''})`]));
+if(!under.length)A.push(['','Aucune position sous son plancher']);
+{const s7=D.s707&&D.s707.txt?{txt:D.s707.txt,ts:tT(D.s707.ts_ms)+' HAE'}:S707;A.push(['a',s7.txt+' <span class="s">(relevé '+s7.ts+')</span>'])}
+$('al').innerHTML=A.map(a=>`<li class="${a[0]}">${a[1]}</li>`).join('');
+$('foot').textContent='données on-chain · total defi_total.py '+tT(o.total_ts||t.total_ts)+' HAE · serveur '+tT(D.server_ts)+' HAE · ESTIM. = hypothèse · version complète : full.html';
+if((now-D.server_ts)/1000>150)$('foot').textContent+=' · ⚠ page non rafraîchie depuis '+Math.round((now-D.server_ts)/60000)+' min';}
+async function load(force){return sLoad(force)}
+load();setInterval(load,60000);setInterval(()=>{if(D)render()},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
+</script></body></html>
