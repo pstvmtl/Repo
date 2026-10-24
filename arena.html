@@ -72,7 +72,9 @@ async function a_static(){const now=Date.now();
   if(A_cache&&now-A_cache[2]<60000)return A_cache;
   const r=await a_tf(A_RAW+'?n='+now,10000,{cache:'no-store'});if(r.ok)return A_cache=[await a_dec(await r.json()),'GitHub (cache ≤5 min)',now];throw new Error('fil injoignable')}
 async function a_live(){const now=Date.now();if(!A_origin||now-A_lastPtr>120000){A_lastPtr=now;try{const p=await(await a_tf('pointer.json?n='+now,6000,{cache:'no-store'})).json();if(/^https:\/\/[a-z0-9.-]+$/.test(p.origin||''))A_origin=p.origin}catch(e){}}
-  if(!A_origin)return null;try{const r=await a_tf(A_origin+'/t/'+A_TOK+'/api/council_feed',7000,{cache:'no-store',mode:'cors',credentials:'omit'});if(r.ok)return await r.json()}catch(e){}return null}
+  if(!A_origin)return null;try{const r=await a_tf(A_origin+'/t/'+A_TOK+'/api/council_feed',7000,{cache:'no-store',mode:'cors',credentials:'omit'});if(r.ok){A_liveOk=Date.now();return await r.json()}}catch(e){}return null}
+// 2026-10-23 wake : le réveil passe UNIQUEMENT par le tunnel (POST jeton-protégé) ; hors tunnel → null (« réveil indisponible hors tunnel »)
+let A_liveOk=0;function wakeURL(){return(A_origin&&Date.now()-A_liveOk<90000)?A_origin+'/t/'+A_TOK+'/api/wake':null}
 async function loadFeed(){
   if(!/^[A-Za-z0-9_-]{20,}$/.test(A_TOK))throw new Error('ouvre le HUD une fois sur cet appareil (lien complet) puis recharge');
   const [lv,st]=await Promise.allSettled([a_live(),a_static()]);
