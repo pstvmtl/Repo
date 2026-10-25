@@ -213,6 +213,21 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 .prg .cu{position:absolute;top:-3px;width:2px;height:12px;background:#fff;box-shadow:0 0 4px #fff}
 .pcard .lb{display:flex;justify-content:space-between;font-size:9.5px;color:var(--dim)}
 .oth{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:5px}
+/* 2026-10-25 registre-0600 : REGISTRE DES POSITIONS (portefeuille · pool · gestionnaire · pending yield) */
+.reg{padding:8px 9px;border-color:var(--g2)!important;box-shadow:0 0 14px #0f63,inset 0 0 14px #0f61}
+.reg .rt{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:4px;margin-bottom:6px}
+.reg .rt>div{background:rgba(0,30,12,.65);border:1px solid var(--g3);border-radius:4px;padding:4px 6px}.reg .rt span{display:block;font-size:9.5px;color:var(--dim)}.reg .rt b{font-size:15px;text-shadow:0 0 6px #0f66}
+.reg .gh{display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:bold;color:var(--g);border-bottom:1px solid var(--g3);margin:8px 0 3px;padding-bottom:2px;letter-spacing:.5px}
+.reg .gh small{font-weight:normal;color:var(--dim)}
+.rr{background:rgba(0,18,7,.78);border:1px solid var(--g3);border-left:3px solid var(--g);border-radius:5px;padding:4px 7px;margin-bottom:4px}
+.rr.mo{border-left-color:var(--mo)}.rr.fr{border-left-color:var(--amb)}.rr.oor{box-shadow:inset 0 0 0 1px var(--amb)}
+.rr .a{display:flex;justify-content:space-between;gap:6px;font-size:12px;font-weight:bold}.rr .a .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rr .b{font-size:10px;color:var(--dim);margin-top:1px}.rr .b code{color:#9fe;font-size:10px}
+.rr .c{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:3px}.rr .c span{display:block;font-size:9px;color:var(--dim)}.rr .c b{font-size:11.5px}
+.rr details{font-size:10px;color:var(--dim);margin-top:2px}.rr summary{cursor:pointer}
+.mg{font-size:9.5px;padding:0 5px;border-radius:7px;border:1px solid currentColor;margin-left:4px;font-weight:normal}.mg.Chaser{color:var(--g)}.mg.Monee{color:var(--mo)}.mg.Frédéric{color:var(--amb)}
+.pyv{color:#7fffd4;text-shadow:0 0 6px #7fffd488}
+@media(max-width:560px){.rr .c{grid-template-columns:repeat(3,1fr)}}
 </style></head><body><canvas id="rain"></canvas><button id="xclose" type="button" aria-label="Fermer la page" title="Fermer" onclick="closePage()">✕</button><main>
 <header><h1><i class="live"></i><span id="ttl">▓ CHASER · RÉCUPÉRER L'IL</span><small id="clock">connexion…</small></h1>
 <div><a id="bur" href="bureau" style="display:inline-block;margin-right:6px;padding:4px 8px;border:1px solid var(--g3);border-radius:6px;color:var(--g);text-decoration:none;font-size:11px">▣ BUREAU 3D</a><button id="rf" onclick="refresh()">⟳ REFRESH</button><div id="rfi">—</div></div><div class="sb" id="sb"></div></header>
@@ -222,6 +237,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 <div class="sec"><span>◇ OBJECTIF · P&amp;L vs capital net → 0 puis +</span><span id="racets"></span></div>
 <div class="race" id="race"></div>
 <div class="sec"><span>◇ FRAIS GÉNÉRÉS AUJOURD'HUI (depuis 00:00 Toronto)</span><span class="s" id="ftdts"></span></div><div class="box ftd" id="ftd"></div>
+<div class="sec"><span>◆ REGISTRE DES POSITIONS · portefeuille · pool · gestionnaire · pending yield</span><span class="tog">grouper : <button id="rgw" onclick="setRegG('wallet')">portefeuille</button> <button id="rgm" onclick="setRegG('manager')">gestionnaire</button></span></div><div class="box reg" id="reg"></div>
 <div class="sec"><span>◇ POSITIONS · P&amp;L vs entrée / vs hold · RANGES · PLANCHERS</span><span class="s">prix courant · distance aux bords · temps hors plage</span></div><div class="pr" id="pr"></div>
 <div class="sec"><span>◇ À SURVEILLER · Multiply · 707 · plus serrés</span></div><div class="oth" id="oth"></div>
 <div class="top" id="top"></div>
@@ -239,7 +255,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.24-1627-7578';
+const APP_VER='2026.10.25-0607-3d74';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -473,13 +489,41 @@ return`<div class="pcard ${r.inrange===false?'oor':''}"><div class="t"><span>${e
 <div><span>vs hold</span><b class="${cls(r.vs_hold)}" title="${esc(r.il_src||'')}">${r.vs_hold!=null?f(r.vs_hold,2,true):'—'}</b></div><div><span>IL · frais</span><b><span class="${cls(r.il)}">${r.il!=null?f(r.il,2,true):'—'}</span> · ${f(r.fees,2)}</b></div></div>
 ${rg}<div class="lb"><span>plancher ${fl}</span><span>auj. ${r.fee_today!=null?'+'+f(r.fee_today,3):'—'}</span></div></div>`}).join('')}
 function othView(){const X=D.xr||{},t=D.top||{},M=X.multiply||{};const s7=X.s707||D.s707;const oor=(X.positions||[]).filter(r=>r.inrange===false);
-const tiles=[[`Multiply HF ${te('ESTIM.')}`,M.hf!=null?`<span class="${M.hf<1.2?'neg':M.hf<1.25?'amb':'pos'}">${f(M.hf,3)}</span>`:'—',`BTC ${f(M.btc,0)} · ${esc(M.how||'')}`],
+const tiles=[[`Multiply HF ${te(M.tag||'ESTIM.')}`,M.hf!=null?`<span class="${M.hf<1.2?'neg':M.hf<1.25?'amb':'pos'}">${f(M.hf,3)}</span>`:'—',`BTC ${f(M.btc,0)} · ${esc(M.how||'')}`],
 [`707 USDC ${tg((s7&&s7.label)||'HYPOTHÈSE')}`,s7?`<span style="font-size:12px">${esc(s7.txt||'')}</span>`:'probe en attente',s7&&s7.ts_ms?'relevé '+tT(s7.ts_ms,1)+' · '+esc(s7.src||''):'s707_probe.py (10 min)'],
 [`Hors plage ${tg('MESURÉ')}`,`<span class="${oor.length?'amb':'pos'}">${oor.length}</span>`,oor.map(r=>esc(r.name.slice(0,22))+' '+(r.oor_h!=null?hpDur(r.oor_h):'')).join(' · ')||'toutes en plage'],
 [`ZEC · SOL · BTC ${tg('MESURÉ')}`,`<span style="font-size:14px">${f((t.px||{}).ZEC,0)} · ${f((t.px||{}).SOL,2)} · ${f(((t.px||{}).BTC||0)/1000,1)}k</span>`,'prix on-chain du collecteur · '+tT(t.px_ts,1)]];
 return tiles.map(([k,v,s])=>`<div class="box"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('')}
+// 2026-10-25 registre-0600 : REGISTRE DES POSITIONS (lecture seule, registre.py côté serveur)
+let REGG=localStorage.getItem('regg')||'wallet';function setRegG(g){REGG=g;localStorage.setItem('regg',g);try{$('reg').innerHTML=regView()}catch(e){}}
+const nd=(v,d)=>v==null?'<span class="s">n/d</span>':f(v,d==null?2:d);
+function regRow(r){const cl=r.manager==='Monee'?'mo':r.manager==='Frédéric'?'fr':'';const rgx=r.lo!=null&&r.hi!=null;
+const st=r.inrange===true?'<span class="ir y">EN PLAGE</span>':r.inrange===false?'<span class="ir n">HORS PLAGE</span>':'';
+const rng=rgx?(r.lo_pct!=null?`${f(r.lo_pct,2,true)} / ${f(r.hi_pct,2,true)} %`:`${f(r.lo,pd(r.lo))}–${f(r.hi,pd(r.hi))}`):'—';
+const fl=r.floor_soft!=null||r.floor_hard!=null?`${r.floor_soft!=null?f(r.floor_soft):'—'}${r.floor_hard!=null?' / '+f(r.floor_hard):''}`:(r.alert_only&&r.hf!=null?'HF '+f(r.hf,3):'—');
+const pyl=r.kind==='LP'?'pending (frais+récomp.)':r.kind==='levier'?'pending':'couru (intérêts)';
+return`<div class="rr ${cl} ${r.inrange===false?'oor':''}"><div class="a"><span class="nm">${esc(r.id)} · ${esc((r.name||'').slice(0,46))}</span><span>${st}${tg(r.value_tag||'HYPOTHÈSE')}<span class="mg ${esc(r.manager)}">${esc(r.manager)}${r.alert_only?' · alerte seule':''}</span></span></div>
+<div class="b">${esc(r.wallet_label)} <code>${esc(r.addr||'')}</code> · ${esc(r.protocol||'')} ${esc(r.pair||'')}${r.fee_tier?' '+esc(r.fee_tier):''}${r.pool_short?` · pool <code>${esc(r.pool_short)}</code>`:r.pool&&r.pool.length<40?' · '+esc(r.pool):''}${r.range&&r.range.tl!=null?` · ticks ${r.range.tl}…${r.range.tu}${r.range.tc!=null?' (cour. '+r.range.tc+')':''}`:''}</div>
+<div class="c"><div><span>valeur</span><b>${nd(r.value)}</b></div><div><span>entrée · P&amp;L</span><b>${r.entry!=null?f(r.entry,0):'—'} · <span class="${cls(r.pnl)}">${r.pnl!=null?f(r.pnl,2,true):'—'}</span></b></div>
+<div><span>range (vs prix)</span><b style="font-size:10.5px">${rng}</b></div><div><span>${r.alert_only?'santé':'plancher doux / dur'}</span><b style="font-size:10.5px">${fl}</b></div>
+<div><span>frais non coll.</span><b>${r.kind==='LP'?nd(r.fees_unc,3):'—'}</b></div><div><span>${pyl}</span><b class="pyv">${r.pending==null?'<span class="s">n/d</span>':f(r.pending,3,r.kind!=='LP')}</b>${r.pending!=null&&r.pending_tag?tg(r.pending_tag):''}</div></div>
+<details><summary>source · méthode</summary>${esc(r.pending_note||'')}${r.src?' · '+esc(r.src):''}${r.lo!=null&&r.cur!=null?` · bornes ${f(r.lo,pd(r.lo))} – ${f(r.hi,pd(r.hi))} ${esc(r.unit||'')} · prix ${f(r.cur,pd(r.cur))}`:''}</details></div>`}
+function regView(){const R=D.reg;$('rgw').className=REGG==='wallet'?'on':'';$('rgm').className=REGG==='manager'?'on':'';
+if(!R||R.err||!(R.rows||[]).length)return`<div class="s">registre indisponible ${R&&R.err?esc(R.err):''}</div>`;const T=R.totals||{};
+const M=R.rows.find(r=>r.id==='MULT-982');
+const tiles=`<div class="rt"><div><span>valeur des positions ${tg('MESURÉ')}</span><b>${f(T.value)} $</b><span>${T.n} positions · hors Multiply</span></div>
+<div><span>frais générés (total) ${tg('MESURÉ')}</span><b class="pos">${f(T.fees_generated)} $</b><span>encaissés fermées ${f(T.fees_closed)} + non collectés ${f(T.fees_unc)}</span></div>
+<div><span>pending yield LP (réclamable) ${tg('MESURÉ')}</span><b class="pyv">${f(T.lp_pending,2)} $</b><span>frais non collectés + récompenses on-chain</span></div>
+<div><span>rendement couru lend/coffres/PT ${tg('HYPOTHÈSE')}</span><b class="${cls(T.yield_accrued)}">${f(T.yield_accrued,2,true)} $</b><span>valeur − dépôt (inclus dans la valeur)</span></div>
+<div><span>pending n/d</span><b class="amb">${T.n_pend_nd}</b><span>non lisible on-chain → pas inventé</span></div>
+${M?`<div><span>Multiply PSTV pos 982 ${tg('MESURÉ')}</span><b class="${M.hf<1.2?'neg':M.hf<1.25?'amb':'pos'}">HF ${f(M.hf,3)}</b><span>net ${f(M.value)} $ · Frédéric · alerte seule</span></div>`:''}</div>`;
+const key=REGG==='manager'?'manager':'wallet_label',G={};R.rows.forEach(r=>(G[r[key]]=G[r[key]]||[]).push(r));
+const agg=REGG==='manager'?R.by_manager:R.by_wallet;const ord=Object.keys(G).sort((a,b)=>((agg[b]||{}).value||0)-((agg[a]||{}).value||0));
+const body=ord.map(g=>{const a=agg[g]||{};const rs=G[g].sort((x,y)=>(y.value||0)-(x.value||0));return`<div class="gh"><span>▸ ${esc(g).toUpperCase()} · ${rs.length}</span><small>${f(a.value)} $ · frais non coll. ${f(a.fees_unc,2)} · pending/couru <span class="pyv">${f(a.pending,2,true)}</span>${a.n_pend_nd?' · '+a.n_pend_nd+' n/d':''}</small></div>${rs.map(regRow).join('')}`}).join('');
+const so=R.sources||{};
+return tiles+body+`<div class="s" style="margin-top:4px">LP Orca : frais non collectés = fee growth on-chain (120 s) · récompenses = reward growth on-chain (simulation updateFeesAndRewards, 300 s ${so.orca_ts?tT(so.orca_ts,1):'—'}${so.orca_err?' ⚠ '+esc(so.orca_err):''}) · Multiply : API Jupiter Lend ${so.mult_ts?tT(so.mult_ts,1):'—'}${so.mult_err?' ⚠ '+esc(so.mult_err):''} · lend/coffres : valeur − dépôt · « n/d » = non lisible, rien d'inventé · gestionnaire : Chaser (89WY, B9sR, HyperEVM) · Monee (LPA, Hrn8, Velocity) · Frédéric (PSTV, alerte seule) · lecture seule, aucune signature</div>`}
 function render(){if(!D)return;const t=D.top,now=Date.now();if(t.title){$('ttl').textContent='▓ '+t.title;document.title=t.title}
-try{$('ilr').innerHTML=ilView();$('ilts').textContent=D.xr&&D.xr.ts?'relevé '+tT(D.xr.ts,1):'';$('ftd').innerHTML=ftdView();$('ftdts').textContent=D.xr&&D.xr.m0?'depuis '+tT(D.xr.m0,1):'';$('pr').innerHTML=prView();$('oth').innerHTML=othView()}catch(e){$('ilr').textContent='erreur rendu : '+e.message}
+try{$('ilr').innerHTML=ilView();$('ilts').textContent=D.xr&&D.xr.ts?'relevé '+tT(D.xr.ts,1):'';$('ftd').innerHTML=ftdView();$('ftdts').textContent=D.xr&&D.xr.m0?'depuis '+tT(D.xr.m0,1):'';$('pr').innerHTML=prView();try{$('reg').innerHTML=regView()}catch(e){$('reg').textContent='erreur registre : '+e.message}$('oth').innerHTML=othView()}catch(e){$('ilr').textContent='erreur rendu : '+e.message}
 $('race').innerHTML=objView(t.objective||{});objSB(t.objective||{});$('racets').textContent=(t.objective&&t.objective.toronto)||('live '+tT(t.px_ts,1));
 const until=t.kill_mode&&t.kill_mode.until;
 const gap=t.live_gap;
