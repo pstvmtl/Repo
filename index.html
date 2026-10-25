@@ -216,14 +216,14 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 /* 2026-10-25 registre-0600 : REGISTRE DES POSITIONS (portefeuille · pool · gestionnaire · pending yield) */
 .reg{padding:8px 9px;border-color:var(--g2)!important;box-shadow:0 0 14px #0f63,inset 0 0 14px #0f61}
 .reg .rt{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:4px;margin-bottom:6px}
-.reg .rt>div{background:rgba(0,30,12,.65);border:1px solid var(--g3);border-radius:4px;padding:4px 6px}.reg .rt span{display:block;font-size:9.5px;color:var(--dim)}.reg .rt b{font-size:15px;text-shadow:0 0 6px #0f66}
+.reg .rt>div{background:rgba(0,30,12,.65);border:1px solid var(--g3);border-radius:4px;padding:4px 6px}.reg .rt>div>span{display:block;font-size:9.5px;color:var(--dim)}.reg .rt b{font-size:15px;text-shadow:0 0 6px #0f66}
 .reg .gh{display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:bold;color:var(--g);border-bottom:1px solid var(--g3);margin:8px 0 3px;padding-bottom:2px;letter-spacing:.5px}
 .reg .gh small{font-weight:normal;color:var(--dim)}
 .rr{background:rgba(0,18,7,.78);border:1px solid var(--g3);border-left:3px solid var(--g);border-radius:5px;padding:4px 7px;margin-bottom:4px}
 .rr.mo{border-left-color:var(--mo)}.rr.fr{border-left-color:var(--amb)}.rr.oor{box-shadow:inset 0 0 0 1px var(--amb)}
 .rr .a{display:flex;justify-content:space-between;gap:6px;font-size:12px;font-weight:bold}.rr .a .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rr .b{font-size:10px;color:var(--dim);margin-top:1px}.rr .b code{color:#9fe;font-size:10px}
-.rr .c{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:3px}.rr .c span{display:block;font-size:9px;color:var(--dim)}.rr .c b{font-size:11.5px}
+.rr .c{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:3px}.rr .c>div>span{display:block;font-size:9px;color:var(--dim)}.rr .c b{font-size:11.5px}
 .rr details{font-size:10px;color:var(--dim);margin-top:2px}.rr summary{cursor:pointer}
 .mg{font-size:9.5px;padding:0 5px;border-radius:7px;border:1px solid currentColor;margin-left:4px;font-weight:normal}.mg.Chaser{color:var(--g)}.mg.Monee{color:var(--mo)}.mg.Frédéric{color:var(--amb)}
 .pyv{color:#7fffd4;text-shadow:0 0 6px #7fffd488}
@@ -255,7 +255,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.25-0607-3d74';
+const APP_VER='2026.10.25-0609-7082';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -506,7 +506,7 @@ return`<div class="rr ${cl} ${r.inrange===false?'oor':''}"><div class="a"><span 
 <div class="b">${esc(r.wallet_label)} <code>${esc(r.addr||'')}</code> · ${esc(r.protocol||'')} ${esc(r.pair||'')}${r.fee_tier?' '+esc(r.fee_tier):''}${r.pool_short?` · pool <code>${esc(r.pool_short)}</code>`:r.pool&&r.pool.length<40?' · '+esc(r.pool):''}${r.range&&r.range.tl!=null?` · ticks ${r.range.tl}…${r.range.tu}${r.range.tc!=null?' (cour. '+r.range.tc+')':''}`:''}</div>
 <div class="c"><div><span>valeur</span><b>${nd(r.value)}</b></div><div><span>entrée · P&amp;L</span><b>${r.entry!=null?f(r.entry,0):'—'} · <span class="${cls(r.pnl)}">${r.pnl!=null?f(r.pnl,2,true):'—'}</span></b></div>
 <div><span>range (vs prix)</span><b style="font-size:10.5px">${rng}</b></div><div><span>${r.alert_only?'santé':'plancher doux / dur'}</span><b style="font-size:10.5px">${fl}</b></div>
-<div><span>frais non coll.</span><b>${r.kind==='LP'?nd(r.fees_unc,3):'—'}</b></div><div><span>${pyl}</span><b class="pyv">${r.pending==null?'<span class="s">n/d</span>':f(r.pending,3,r.kind!=='LP')}</b>${r.pending!=null&&r.pending_tag?tg(r.pending_tag):''}</div></div>
+<div><span>frais non coll.</span><b>${r.kind==='LP'?nd(r.fees_unc,3):'—'}</b></div><div><span>${pyl}</span><b class="pyv">${r.pending==null?'<span class="s">n/d</span>':f(r.pending,3,r.kind!=='LP')} ${r.pending!=null&&r.pending_tag?tg(r.pending_tag):''}</b></div></div>
 <details><summary>source · méthode</summary>${esc(r.pending_note||'')}${r.src?' · '+esc(r.src):''}${r.lo!=null&&r.cur!=null?` · bornes ${f(r.lo,pd(r.lo))} – ${f(r.hi,pd(r.hi))} ${esc(r.unit||'')} · prix ${f(r.cur,pd(r.cur))}`:''}</details></div>`}
 function regView(){const R=D.reg;$('rgw').className=REGG==='wallet'?'on':'';$('rgm').className=REGG==='manager'?'on':'';
 if(!R||R.err||!(R.rows||[]).length)return`<div class="s">registre indisponible ${R&&R.err?esc(R.err):''}</div>`;const T=R.totals||{};
