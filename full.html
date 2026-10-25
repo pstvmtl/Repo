@@ -220,7 +220,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 .reg .gh{display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:bold;color:var(--g);border-bottom:1px solid var(--g3);margin:8px 0 3px;padding-bottom:2px;letter-spacing:.5px}
 .reg .gh small{font-weight:normal;color:var(--dim)}
 .rr{background:rgba(0,18,7,.78);border:1px solid var(--g3);border-left:3px solid var(--g);border-radius:5px;padding:4px 7px;margin-bottom:4px}
-.rr.mo{border-left-color:var(--mo)}.rr.fr{border-left-color:var(--amb)}.rr.oor{box-shadow:inset 0 0 0 1px var(--amb)}
+.rr.mo{border-left-color:var(--mo)}.rr.fdr{border-left-color:var(--amb)}.rr.oor{box-shadow:inset 0 0 0 1px var(--amb)}
 .rr .a{display:flex;justify-content:space-between;gap:6px;font-size:12px;font-weight:bold}.rr .a .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rr .b{font-size:10px;color:var(--dim);margin-top:1px}.rr .b code{color:#9fe;font-size:10px}
 .rr .c{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:3px}.rr .c>div>span{display:block;font-size:9px;color:var(--dim)}.rr .c b{font-size:11.5px}
@@ -255,7 +255,7 @@ header{background:rgba(0,0,0,.84);padding-top:max(6px,env(safe-area-inset-top));
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.25-0609-7082';
+const APP_VER='2026.10.25-0610-9fd0';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -497,7 +497,7 @@ return tiles.map(([k,v,s])=>`<div class="box"><div class="k">${k}</div><div clas
 // 2026-10-25 registre-0600 : REGISTRE DES POSITIONS (lecture seule, registre.py côté serveur)
 let REGG=localStorage.getItem('regg')||'wallet';function setRegG(g){REGG=g;localStorage.setItem('regg',g);try{$('reg').innerHTML=regView()}catch(e){}}
 const nd=(v,d)=>v==null?'<span class="s">n/d</span>':f(v,d==null?2:d);
-function regRow(r){const cl=r.manager==='Monee'?'mo':r.manager==='Frédéric'?'fr':'';const rgx=r.lo!=null&&r.hi!=null;
+function regRow(r){const cl=r.manager==='Monee'?'mo':r.manager==='Frédéric'?'fdr':'';const rgx=r.lo!=null&&r.hi!=null;
 const st=r.inrange===true?'<span class="ir y">EN PLAGE</span>':r.inrange===false?'<span class="ir n">HORS PLAGE</span>':'';
 const rng=rgx?(r.lo_pct!=null?`${f(r.lo_pct,2,true)} / ${f(r.hi_pct,2,true)} %`:`${f(r.lo,pd(r.lo))}–${f(r.hi,pd(r.hi))}`):'—';
 const fl=r.floor_soft!=null||r.floor_hard!=null?`${r.floor_soft!=null?f(r.floor_soft):'—'}${r.floor_hard!=null?' / '+f(r.floor_hard):''}`:(r.alert_only&&r.hf!=null?'HF '+f(r.hf,3):'—');
