@@ -36,7 +36,7 @@ ul{margin:4px 0 0;padding-left:18px}li{margin:3px 0;font-size:13.5px;color:#eaff
 // ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
 // Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
 // #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
-const APP_VER='2026.10.26-1157-8719';
+const APP_VER='2026.10.26-1308-f407';
 const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
 const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
 let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
@@ -65,6 +65,7 @@ async function sLoad(force){if(S_busy)return;S_busy=true;try{
   if(best&&(!D||best.server_ts>=D.server_ts)){D=best;S_ts=best.server_ts;S_src=src;S_err='';lastRefresh=Date.now();render()}
   else if(!best){S_err=err.indexOf('operation')>=0||err.indexOf('decrypt')>=0?'déchiffrement impossible (jeton ?)':err}
   const b=document.getElementById('bur');if(b){if(S_origin){b.href=S_origin+'/t/'+S_TOK+'/bureau';b.style.display=''}else b.style.display='none'}
+  const fl=document.getElementById('flr');if(fl&&S_origin)fl.href=S_origin+'/t/'+S_TOK+'/floor';
 }catch(e){S_err=String(e&&e.message||e)}finally{S_busy=false;s_badge()}}
 function s_badge(){let e=document.getElementById('sbadge');if(!e){e=document.createElement('div');e.id='sbadge';
   e.style.cssText='position:fixed;left:calc(env(safe-area-inset-left) + 6px);bottom:calc(env(safe-area-inset-bottom) + 6px);z-index:60;font:11px/1.35 ui-monospace,Menlo,monospace;padding:4px 8px;border-radius:6px;background:#000d;border:1px solid;max-width:92vw;pointer-events:none';document.body.appendChild(e);document.body.style.paddingBottom='calc(env(safe-area-inset-bottom) + 40px)'}
@@ -74,6 +75,10 @@ function s_badge(){let e=document.getElementById('sbadge');if(!e){e=document.cre
   else m='● dernière mise à jour '+hm+' HAE · '+S_src;
   e.style.color=c;e.style.borderColor=c+'88';e.textContent=m+' · v'+APP_VER}
 setInterval(s_badge,15000);
+
+// 2026-10-26 restore-1310 : bouton FLOOR (Pages → tunnel /t/<jeton>/floor ; tunnel → lien relatif « floor »)
+async function sFloor(ev){try{if(ev)ev.preventDefault();if(!S_origin){try{const p=await(await s_tf('pointer.json?n='+Date.now(),6000,{cache:'no-store'})).json();if(/^https:\/\/[a-z0-9.-]+$/.test(p.origin||''))S_origin=p.origin}catch(e){}}
+  if(S_origin&&S_TOK){location.href=S_origin+'/t/'+S_TOK+'/floor';return false}alert('FLOOR injoignable : la box (tunnel) ne répond pas pour l\'instant.')}catch(e){}return false}
 // ===== fin HUD statique =====
 
 

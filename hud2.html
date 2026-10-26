@@ -1,0 +1,215 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#f3ecdd"><link rel="apple-touch-icon" href="assets/chaser-icon-180.png"><link rel="icon" type="image/png" href="assets/chaser-icon-192.png"><meta name="apple-mobile-web-app-title" content="Chaser"><title>Chaser · Bureau DeFi</title><!-- NOUVEAU HUD 2026-10-26 (design « HUD office » de Monee) — lecture seule -->
+<style>
+:root{--bg:#f3ecdd;--grid:#e4d9c3;--ink:#1d1a16;--mut:#6f665a;--terra:#c0553a;--card:#fffaf0;--line:#d8ccb4;--ok:#2f7d4f;--warn:#c98a12;--bad:#b3261e;--wood:#b07a45}
+body.night{--bg:#16130f;--grid:#221d17;--ink:#f1e8d6;--mut:#a89c88;--card:#1f1a14;--line:#3a3127;--terra:#e0775a}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:22px 22px;color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:1000px;margin:0 auto;padding:14px 12px 40px}
+.mono,.lbl{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.num{font-family:Georgia,"Times New Roman",serif;color:var(--terra);font-weight:700}
+h1{font-size:24px;margin:2px 0 0;font-weight:800;letter-spacing:-.01em}h2{font-size:18px;margin:26px 0 8px;font-weight:800;display:flex;gap:8px;align-items:baseline}
+h2 .n{font-family:Georgia,serif;color:var(--terra);font-size:22px}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.pill{display:inline-block;border:1.5px solid var(--ink);border-radius:999px;padding:2px 10px;font:600 11px ui-monospace,Menlo,monospace;letter-spacing:.05em;margin:2px 4px 2px 0;background:var(--card)}
+.pill.t{border-color:var(--terra);color:var(--terra)}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin:8px 0}
+.hero{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.hero .card{margin:0}
+.big{font-size:30px;line-height:1.1}.mid{font-size:21px}
+.tag{font:700 10px ui-monospace,Menlo,monospace;padding:1px 6px;border-radius:5px;margin-left:4px;vertical-align:middle;white-space:nowrap}
+.tag.m{background:#dcefe2;color:#1d5e36}.tag.h{background:#f6e6c4;color:#7a5200}.tag.s{background:#f8d7d3;color:#8a1c14}
+body.night .tag.m{background:#1f3a29;color:#9fe0b5}body.night .tag.h{background:#43361a;color:#f1cf7f}body.night .tag.s{background:#4a1e1a;color:#ffb3aa}
+.src{font:11px ui-monospace,Menlo,monospace;color:var(--mut);margin-top:4px}
+.g{color:var(--ok)}.r{color:var(--bad)}.y{color:var(--warn)}
+.act{display:grid;grid-template-columns:28px 1fr;gap:10px;border-left:4px solid var(--terra)}
+.act .i{font-family:Georgia,serif;color:var(--terra);font-size:22px;font-weight:700}
+.act b{font-size:15.5px}.act .kv{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin-top:4px}
+.st{font:700 10.5px ui-monospace,Menlo,monospace;padding:2px 7px;border-radius:6px;border:1.5px solid}
+.st.go{color:var(--terra);border-color:var(--terra)}.st.todo{color:var(--bad);border-color:var(--bad)}.st.plan{color:var(--mut);border-color:var(--mut)}.st.ok{color:var(--ok);border-color:var(--ok)}
+.pos{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.pos .card{margin:0}
+.ph{display:flex;justify-content:space-between;gap:6px;align-items:baseline}.ph b{font-size:16px}
+.bar{position:relative;height:12px;background:repeating-linear-gradient(90deg,var(--line) 0 2px,transparent 2px 8px);border:1.5px solid var(--ink);border-radius:3px;margin:8px 0 2px}
+.bar i{position:absolute;top:-4px;width:4px;height:17px;background:var(--terra);border-radius:1px}
+.rows{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;font-size:13px;margin-top:6px}.rows span:nth-child(odd){color:var(--mut)}
+.rows span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums}
+.gas{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.gas div{background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px}
+.office{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:linear-gradient(#efe2c8 0 38%,var(--wood) 38% 100%);background-size:100% 100%;border:2px solid var(--ink);border-radius:12px;padding:12px;position:relative}
+body.night .office{background:linear-gradient(#2a241c 0 38%,#5a3d22 38% 100%)}
+.seat{background:var(--card);border:2px solid var(--ink);border-radius:8px;padding:8px;font-size:12.5px;position:relative;box-shadow:3px 3px 0 rgba(0,0,0,.18)}
+.seat .hd{display:flex;gap:6px;align-items:center}.seat svg{flex:0 0 auto;image-rendering:pixelated}
+.seat b{font-size:13.5px}.seat .job{color:var(--mut);font-size:11.5px}
+.led{width:9px;height:9px;border-radius:2px;display:inline-block;margin-left:auto;border:1px solid var(--ink)}
+.led.ok{background:#3dbb63}.led.warn{background:#f0b429}.led.bad{background:#e0453a}.led.off{background:#aaa}
+.seat .v{margin-top:4px}.seat .v div{display:flex;justify-content:space-between;gap:6px}
+.warnbox{border:2px solid var(--bad);color:var(--bad);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:13.5px;background:var(--card)}
+.foot{margin-top:26px;font-size:12px;color:var(--mut);border-top:1.5px dashed var(--line);padding-top:10px}
+button{font:600 12px ui-monospace,Menlo,monospace;background:var(--card);color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer}
+a{color:var(--terra)}
+.ev{font-size:12.5px;border-bottom:1px dashed var(--line);padding:4px 0}
+@media (max-width:760px){.hero{grid-template-columns:1fr}.pos{grid-template-columns:1fr}.office{grid-template-columns:repeat(2,1fr)}.gas{grid-template-columns:repeat(2,1fr)}.big{font-size:27px}}
+</style></head><body>
+<div class="w">
+<div class="top"><div><div class="lbl">Chaser · bureau du conseil · lecture seule</div><h1>Bureau DeFi de Frédéric</h1>
+<div style="margin-top:6px"><span class="pill">BOTS 6 + 1 BOSS</span><span class="pill">HEURES 24/7</span><span class="pill t" id="fresh">…</span></div></div>
+<div style="text-align:right"><div class="lbl">mise à jour</div><div class="num mid" id="clock">—</div><div class="src" id="rfi">—</div>
+<div style="margin-top:6px"><button onclick="load(true)">↻ actualiser</button> <button onclick="night()">◐ nuit</button></div></div></div>
+<div id="warns"></div>
+
+<h2><span class="n">01</span>Argent : total contre capital</h2>
+<div class="hero" id="hero"></div>
+<div class="src" id="herosrc"></div>
+
+<h2><span class="n">02</span>Actions concrètes</h2>
+<div class="lbl" style="margin-bottom:4px">gain · coût · qui exécute · statut — le HUD n’exécute rien</div>
+<div id="acts"></div>
+
+<h2><span class="n">03</span>Positions de liquidité</h2>
+<div class="lbl" id="possum"></div>
+<div class="pos" id="pos"></div>
+
+<h2><span class="n">04</span>Risque : Multiply et gaz</h2>
+<div id="risk"></div>
+<div class="gas" id="gas"></div>
+
+<h2><span class="n">05</span>Le bureau des bots</h2>
+<div class="office" id="office"></div>
+<div id="reports" class="card"></div>
+<div id="events" class="card"></div>
+
+<div class="foot" id="foot"></div>
+</div>
+<script>
+// ===== HUD STATIQUE (GitHub Pages) — inséré par static_hud/publisher.py =====
+// Données : instantané chiffré AES-GCM poussé par la box toutes les ~60 s (branche hud-data). Clé dérivée du
+// #jeton (jamais envoyé à un serveur). Mode live optionnel : si le tunnel répond, on prend sa donnée (plus fraîche).
+const APP_VER='2026.10.26-1308-f407';
+const S_TOK=(()=>{let t=(location.hash||'').replace(/^#/,'');try{if(t)localStorage.setItem('hud_tok',t);else t=localStorage.getItem('hud_tok')||''}catch(e){}return t})();
+const S_API='https://api.github.com/repos/pstvmtl/Repo/contents/data.enc.json?ref=hud-data',S_RAW='https://raw.githubusercontent.com/pstvmtl/Repo/hud-data/data.enc.json';
+let S_KEY=null,S_apiBlock=0,S_lastApi=0,S_ts=0,S_src='',S_err='',S_origin=null,S_lastPtr=0,S_busy=false;
+const s_b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+function s_tf(u,ms,o){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);o=o||{};o.signal=c.signal;return fetch(u,o).finally(()=>clearTimeout(t))}
+async function s_key(){if(S_KEY)return S_KEY;const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('chaser-hud-static-v1:'+S_TOK));return S_KEY=await crypto.subtle.importKey('raw',h,'AES-GCM',false,['decrypt'])}
+async function s_dec(j){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:s_b64(j.n)},await s_key(),s_b64(j.c));let b=new Blob([pt]);
+  if(j.z){if(!('DecompressionStream' in window))throw new Error('navigateur trop ancien (iOS ≥ 16.4 requis)');b=await new Response(b.stream().pipeThrough(new DecompressionStream('gzip'))).blob()}
+  return JSON.parse(await b.text())}
+async function s_static(){const now=Date.now();
+  if(now>S_apiBlock&&now-S_lastApi>=75000){S_lastApi=now;try{const r=await s_tf(S_API,10000,{cache:'no-cache',headers:{Accept:'application/vnd.github.raw'}});
+      if(r.ok)return[await r.json(),'GitHub'];if(r.status==403||r.status==429)S_apiBlock=now+15*60000}catch(e){}}
+  const r=await s_tf(S_RAW+'?n='+now,10000,{cache:'no-store'});if(r.ok)return[await r.json(),'GitHub (cache ≤5 min)'];throw new Error('instantané injoignable')}
+async function s_live(){ // optionnel, coûte 1 requête ; silencieux si le tunnel est mort
+  const now=Date.now();if(!S_origin||now-S_lastPtr>120000){S_lastPtr=now;try{const p=await(await s_tf('pointer.json?n='+now,6000,{cache:'no-store'})).json();if(/^https:\/\/[a-z0-9.-]+$/.test(p.origin||''))S_origin=p.origin}catch(e){}}
+  if(!S_origin)return null;try{const r=await s_tf(S_origin+'/t/'+S_TOK+'/api/matrix',7000,{cache:'no-store',mode:'cors',credentials:'omit'});if(r.ok)return await r.json()}catch(e){}return null}
+async function s_ver(){try{const v=await(await s_tf('version.json?n='+Date.now(),6000,{cache:'no-store'})).json();
+  if(v.ver&&v.ver!==APP_VER&&APP_VER.indexOf('test-')!==0){let k='';try{k=sessionStorage.getItem('hud_vtry')||''}catch(e){}const[kv,kt]=k.split('|');if(kv===v.ver&&Date.now()-(+kt||0)<180000)return;try{sessionStorage.setItem('hud_vtry',v.ver+'|'+Date.now())}catch(e){}location.replace(location.pathname+'?v='+encodeURIComponent(v.ver)+location.hash)}}catch(e){}}
+async function sLoad(force){if(S_busy)return;S_busy=true;try{
+  if(!/^[A-Za-z0-9_-]{20,}$/.test(S_TOK)){S_err='jeton absent : ouvre le lien complet (avec #) une fois';return}
+  s_ver();
+  const [st,lv]=await Promise.allSettled([s_static().then(async([j,src])=>[await s_dec(j),src,j.ts]),s_live()]);
+  let best=null,src='',err='';
+  if(st.status==='fulfilled'){best=st.value[0];src=st.value[1]}else err=String(st.reason&&st.reason.message||st.reason);
+  if(lv.status==='fulfilled'&&lv.value&&(!best||lv.value.server_ts>=best.server_ts)){best=lv.value;src='LIVE tunnel'}
+  if(best&&(!D||best.server_ts>=D.server_ts)){D=best;S_ts=best.server_ts;S_src=src;S_err='';lastRefresh=Date.now();render()}
+  else if(!best){S_err=err.indexOf('operation')>=0||err.indexOf('decrypt')>=0?'déchiffrement impossible (jeton ?)':err}
+  const b=document.getElementById('bur');if(b){if(S_origin){b.href=S_origin+'/t/'+S_TOK+'/bureau';b.style.display=''}else b.style.display='none'}
+  const fl=document.getElementById('flr');if(fl&&S_origin)fl.href=S_origin+'/t/'+S_TOK+'/floor';
+}catch(e){S_err=String(e&&e.message||e)}finally{S_busy=false;s_badge()}}
+function s_badge(){let e=document.getElementById('sbadge');if(!e){e=document.createElement('div');e.id='sbadge';
+  e.style.cssText='position:fixed;left:calc(env(safe-area-inset-left) + 6px);bottom:calc(env(safe-area-inset-bottom) + 6px);z-index:60;font:11px/1.35 ui-monospace,Menlo,monospace;padding:4px 8px;border-radius:6px;background:#000d;border:1px solid;max-width:92vw;pointer-events:none';document.body.appendChild(e);document.body.style.paddingBottom='calc(env(safe-area-inset-bottom) + 40px)'}
+  const age=S_ts?(Date.now()-S_ts)/1000:null,hm=S_ts?new Date(S_ts).toLocaleTimeString('fr-CA',{timeZone:'America/Toronto',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).replace(' h ',':'):'—';
+  let c='#00ff66',m;if(!S_ts){c='#ff4455';m='⚠ '+(S_err||'chargement…')}
+  else if(age>300){c='#ffb000';m='⚠ dernière mise à jour '+hm+' HAE ('+Math.round(age/60)+' min) — box figée ?'}
+  else m='● dernière mise à jour '+hm+' HAE · '+S_src;
+  e.style.color=c;e.style.borderColor=c+'88';e.textContent=m+' · v'+APP_VER}
+setInterval(s_badge,15000);
+
+// 2026-10-26 restore-1310 : bouton FLOOR (Pages → tunnel /t/<jeton>/floor ; tunnel → lien relatif « floor »)
+async function sFloor(ev){try{if(ev)ev.preventDefault();if(!S_origin){try{const p=await(await s_tf('pointer.json?n='+Date.now(),6000,{cache:'no-store'})).json();if(/^https:\/\/[a-z0-9.-]+$/.test(p.origin||''))S_origin=p.origin}catch(e){}}
+  if(S_origin&&S_TOK){location.href=S_origin+'/t/'+S_TOK+'/floor';return false}alert('FLOOR injoignable : la box (tunnel) ne répond pas pour l\'instant.')}catch(e){}return false}
+// ===== fin HUD statique =====
+
+
+let D=null,lastRefresh=null,inflight=false;
+const $=id=>document.getElementById(id);const OLD=/\/t\//.test(location.pathname)?'old':'old.html'+location.hash;
+const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const f=(x,d=2)=>x==null||isNaN(x)?'—':Number(x).toLocaleString('fr-CA',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sg=(x,d=2)=>x==null||isNaN(x)?'—':(x>0?'+':x<0?'−':'')+f(Math.abs(x),d);
+const tT=ms=>ms?new Date(ms).toLocaleTimeString('en-GB',{timeZone:'America/Toronto',hour:'2-digit',minute:'2-digit'})+' HAE':'—';
+const tD=ms=>ms?new Date(ms).toLocaleString('en-GB',{timeZone:'America/Toronto',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','')+' HAE':'—';
+const age=ms=>ms?Math.round((Date.now()-ms)/60000):null;
+function tag(kind,ms,maxMin){const a=age(ms);if(ms&&maxMin&&a>maxMin)return `<span class="tag s">PÉRIMÉ ${a} min</span>`;return kind==='h'?'<span class="tag h">HYPOTHÈSE</span>':'<span class="tag m">MESURÉ</span>'}
+function night(){document.body.classList.toggle('night');localStorage.setItem('hudnight',document.body.classList.contains('night')?'1':'0')}
+if(localStorage.getItem('hudnight')==='1')document.body.classList.add('night');
+const SPR={guard:'#2f5d8a',scan:'#4f8a3a',hunt:'#8a3a3a',news:'#6b4f8a',risk:'#c0553a',cash:'#b08a1e',dab:'#2a2a2a',boss:'#c0553a'};
+function bot(c){const p=['..XXXX..','.XXXXXX.','.XoXXoX.','.XXXXXX.','..XXXX..','.YYYYYY.','YYYYYYYY','.Y....Y.'];let r='';p.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch==='.')return;r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${ch==='o'?'#fff':ch==='Y'?c:'#e9c39b'}"/>`}));return `<svg width="30" height="30" viewBox="0 0 8 8" shape-rendering="crispEdges">${r}</svg>`}
+function seat(k,name,job,led,rows,src){return `<div class="seat"><div class="hd">${bot(SPR[k])}<div><b>${E(name)}</b><div class="job">${E(job)}</div></div><span class="led ${led}"></span></div><div class="v">${rows.map(r=>`<div><span>${r[0]}</span><span class="mono">${r[1]}</span></div>`).join('')}</div>${src?`<div class="src">${src}</div>`:''}</div>`}
+function stc(s){s=s||'';return /GO/.test(s)?'go':/FAIRE/.test(s)?'todo':/REÇU|RIEN/.test(s)?'ok':'plan'}
+function render(){if(!D)return;const H=D.hud2;const now=Date.now();
+ if(!H){$('warns').innerHTML='<div class="warnbox">Agrégateur du nouveau HUD pas encore prêt (≈2 min après un redémarrage). <a href="${OLD}">Ancien HUD</a></div>';return}
+ const w=[];const ha=age(H.ts);if(ha>6)w.push(`Données du HUD périmées : dernière lecture il y a ${ha} min.`);(H.errs||[]).forEach(e=>w.push('Lecture échouée : '+E(e)));
+ $('fresh').textContent=ha<=6?'DONNÉES FRAÎCHES':'DONNÉES PÉRIMÉES';$('clock').textContent=tT(H.ts);
+ // 01
+ const T=H.total||{};const tA=age(T.ts);const tk=tag('m',T.ts,25);
+ const pc=T.pnl<0?'r':'g';
+ $('hero').innerHTML=`<div class="card"><div class="lbl">Valeur totale maintenant ${tk}</div><div class="num big">${f(T.total)}</div><div class="src">USD · lu ${tT(T.ts)}</div></div>
+ <div class="card"><div class="lbl">Capital net investi <span class="tag m">MESURÉ</span></div><div class="num big" style="color:var(--ink)">${f(T.capital)}</div><div class="src">apports ${f(T.deposits)} − retraits ${f(T.withdrawals)}</div></div>
+ <div class="card"><div class="lbl">Gain / perte réel ${tk}</div><div class="num big ${pc}">${sg(T.pnl)}</div><div class="src">${sg(T.pnl_pct)} % · 24 h : <b class="${(T.d24||{}).delta>=0?'g':'r'}">${T.d24?sg(T.d24.delta):'—'}</b>${T.d24?' (depuis '+E(T.d24.t_then.slice(11))+' hier)':''}</div></div>`;
+ $('herosrc').innerHTML=`Les apports ne sont pas des gains : ${(T.recent_deposits||[]).map(d=>`${f(d.usd)} (${E(d.when)})`).join(' et ')} sont comptés dans le capital, pas dans le gain. ${E(T.excl)}. ${E(T.gap_note)}.<br>Source : ${E(T.src)}.`;
+ // 02
+ $('acts').innerHTML=(H.actions||[]).map((a,i)=>`<div class="card act"><div class="i">${i+1}</div><div><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>${E(a.title)}</b><span class="st ${stc(a.status)}">${E(a.status)}</span></div>
+ ${a.why?`<div style="font-size:13.5px;margin-top:2px">${E(a.why)}</div>`:''}${a.measure?`<div class="src">${E(a.measure)}</div>`:''}
+ <div class="kv"><span>Gain : <b>${E(a.gain||'—')}</b></span><span>Coût : <b>${E(a.cost||'—')}</b></span><span>Qui : <b>${E(a.who||'—')}</b></span></div></div></div>`).join('')||'<div class="card">Aucune action en attente.</div>';
+ // 03
+ const P=(H.positions||[]).slice().sort((a,b)=>b.value-a.value);let sv=0,sf=0,sd=0;
+ P.forEach(p=>{sv+=p.value;sf+=p.fees;sd+=(p.f1k_meas!=null?p.f1k_meas:p.f1k_est)*p.value/1000});
+ $('possum').innerHTML=`${P.length} positions Orca lues sur la chaîne · ${f(sv)} USD · frais en attente ${f(sf)} USD · ≈ ${f(sd)} USD/jour de frais <span class="tag h">HYPOTHÈSE</span>`;
+ const card=p=>{const pos=Math.max(0,Math.min(100,(p.t-p.tl)/(p.tu-p.tl)*100));
+  const fl=[['précoce',p.early],['doux',p.soft],['dur',p.hard]].filter(x=>x[1]!=null);const kill=p.kill||p.hard;
+  const pnl=p.base!=null?p.value+p.fees-p.base:null;
+  const flr=fl.map(([n,v])=>{const m=p.value-v;return `<span>${n}${v===kill?' (kill)':''} ${f(v)}</span><span class="${m<p.value*0.01?'r':m<p.value*0.03?'y':'g'}">${sg(m)} · ${f(m/p.value*100,1)} %</span>`}).join('');
+  const f1=p.f1k_meas!=null?`${f(p.f1k_meas)} <span class="tag m">MESURÉ ${f(p.f1k_win_h,1)} h</span>`:`${f(p.f1k_est)} <span class="tag h">HYPOTHÈSE</span>`;
+  return `<div class="card"><div class="ph"><b>${E(p.short)} · ${E(p.pair)}</b><span class="num mid">${f(p.value)}</span></div>
+  <div class="src">${E(p.name)} · exécute : ${E(p.exec)} · ${tag('m',H.ts,6)} ${tT(H.ts)}</div>
+  <div class="bar"><i style="left:calc(${pos}% - 2px)"></i></div>
+  <div class="src" style="display:flex;justify-content:space-between"><span>bas −${f(p.d_lo,1)} %</span><b class="${p.inrange?'g':'r'}">${p.inrange?'DANS LA PLAGE':'HORS PLAGE'}</b><span>haut +${f(p.d_hi,1)} %</span></div>
+  <div class="rows"><span>Frais en attente</span><span>${f(p.fees)} USD</span><span>Frais / 1 000 / jour</span><span>${f1}</span>
+  ${pnl!=null?`<span>Gain vs livre (${f(p.base)})</span><span class="${pnl>=0?'g':'r'}">${sg(pnl)}</span>`:''}${flr}</div>
+  ${p.base_note?`<div class="src">Livre : ${E(p.base_note)}</div>`:''}${p.src_floor?`<div class="src">Planchers : ${E(p.src_floor)}</div>`:''}</div>`};
+ const X=(H.extra_positions||[]).map(p=>`<div class="card"><div class="ph"><b>${E(p.short)}</b><span class="num mid">${f(p.value)}</span></div><div class="src">${E(p.name)} · ${E(p.tag)} ${tag('m',p.ts_ms,90)} ${E(p.ts_toronto)} HAE</div>
+  <div class="rows"><span>Frais en attente</span><span>${f(p.fees)}</span>${p.base!=null?`<span>Gain vs livre (${f(p.base)})</span><span class="${p.value-p.base>=0?'g':'r'}">${sg(p.value-p.base)}</span>`:''}${p.early!=null?`<span>alerte ${f(p.early)}</span><span>${sg(p.value-p.early)}</span>`:''}${p.hard!=null?`<span>dur ${f(p.hard)}</span><span>${sg(p.value-p.hard)}</span>`:''}</div><div class="src">${E(p.src)} · ${E(p.note)}</div></div>`).join('');
+ $('pos').innerHTML=P.map(card).join('')+X;
+ // 04
+ const mu=H.multiply||{};const px=H.px||{};const lv=(H.multiply_lvl||{})['3'];const btc=px.BTC||mu.oracle;
+ const dist=btc&&lv?(btc-lv)/btc*100:null;const hf=mu.hf;
+ $('risk').innerHTML=`<div class="card"><div class="ph"><b>Jupiter Multiply 982 (wallet perso de Frédéric)</b><span class="num mid ${hf<1.22?'r':hf<1.3?'y':'g'}">HF ${f(hf,3)}</span></div>
+ <div class="rows"><span>BTC maintenant</span><span>${f(px.BTC,0)} USD ${tag('m',px.ts,10)}</span><span>BTC où HF = 1,20</span><span>${f(lv,0)} USD <span class="tag h">HYPOTHÈSE</span></span><span>Marge avant HF 1,20</span><span class="${dist<3?'r':dist<6?'y':'g'}">${dist!=null?'−'+f(dist,1)+' % ('+f(btc-lv,0)+' USD)':'—'}</span>
+ <span>Paliers d’alerte</span><span>${Object.entries(H.multiply_lvl||{}).map(([k,v])=>f(v,0)).join(' · ')}</span>
+ <span>HF estimé au prix actuel</span><span>${f(mu.hf_est,3)} <span class="tag h">HYPOTHÈSE</span> ${tT(mu.est_ts)}</span><span>Dette / collatéral</span><span>${f(mu.debt,0)} USD / ${f(mu.coll_cbbtc,4)} cbBTC</span></div><div class="src">HF : ${E(mu.src||'API Jupiter Lend')} ${tag('m',mu.ts,75)} ${tD(mu.ts)}. Seuil BTC : multiply_btc_alert.json (calcul HF linéaire). Frédéric seul peut agir ; le HUD alerte.</div></div>`;
+ const W=Object.values(H.wallets||{});
+ $('gas').innerHTML=W.map(x=>`<div><b>${E(x.name)}</b> <span class="src">${E(x.who)}</span><br><span class="${x.gas_ok?'g':'r'}">${f(x.sol,4)} SOL</span> <span class="src">min ${f(x.min_sol,3)}</span>${x.usdc?`<br><span class="src">cash ${f(x.usdc)} USDC</span>`:''}</div>`).join('');
+ // 05
+ const pf=P.reduce((m,p)=>p.f1k_est>(m?m.f1k_est:-1)?p:m,null);const fd=H.feed||{};const FS=fd.seats||{};
+ const dz=H.dab||{};const near=P.map(p=>{const k=p.kill||p.hard;return k?{p,m:(p.value-k)/p.value*100}:null}).filter(Boolean).sort((a,b)=>a.m-b.m)[0];
+ const lowgas=W.filter(x=>!x.gas_ok);const rep=H.reports||{};
+ const fs=(k,def)=>FS[k]&&FS[k].lines?FS[k].lines.slice(0,4).map(l=>[E(l[0]),E(l[1])]):def;
+ const ev=(H.events||[])[0];
+ const S=[
+  seat('guard','Gardien','planchers et kills','x'.replace('x',near&&near.m<2?'bad':near&&near.m<4?'warn':'ok'),fs('guardian',[['plus proche du kill',near?E(near.p.short)+' '+f(near.m,1)+' %':'—'],['positions hors plage',String(P.filter(p=>!p.inrange).length)]]),'RPC '+tT(H.ts)),
+  seat('scan','Scanner','meilleur rendement',pf?'ok':'off',fs('scanner',[['meilleur / 1 000 / j',pf?E(pf.short)+' '+f(pf.f1k_est):'—'],['candidat au-dessus de la barre','aucun (Monee 11:00)']]),'estimation pool 24 h · HYPOTHÈSE'),
+  seat('hunt','Chasseur','nouvelles opportunités',FS.hunter?'ok':'off',fs('hunter',[['état','pas de donnée box'],['alimentation','HUD-FEED-monee.json']]),''),
+  seat('news','Lecteur de nouvelles','dernière alerte',ev?(ev.sev==='critical'?'warn':'ok'):'off',fs('news',[['dernière',ev?E(ev.t.slice(5)):'—'],['',ev?E(ev.msg.slice(0,60))+'…':'—']]),'events.jsonl (box)'),
+  seat('risk','Risque','HF, gaz',hf<1.22||lowgas.length?'bad':hf<1.3?'warn':'ok',[['HF Multiply',f(hf,3)+' / plancher 1,20'],['wallets sous 0,03 SOL',lowgas.length?E(lowgas.map(x=>x.name).join(', ')):'aucun']],''),
+  seat('cash','Caissier','frais et rythme','ok',fs('cashier',[['frais en attente',f(sf)+' USD'],['rythme estimé',f(sd*30,0)+' USD/mois'],['objectif','5 000 USD/mois']]),'HYPOTHÈSE (frais pool 24 h)'),
+  seat('dab','DAB (bot degen)','140 USDC, limites strictes',dz.funded?'ok':'warn',[['USDC sur le wallet',f(dz.usdc)+' '+(dz.funded?'✔':'⏳ en attente')],['SOL (gaz)',f(dz.sol,4)],['limites',E((dz.limits||[])[0]||'—')]],'RPC '+tT(dz.ts)),
+  seat('boss','Frédéric','le boss','ok',[['décide','GO / NON'],['seul sur','Multiply, Phantom']],'')];
+ $('office').innerHTML=S.join('');
+ const ags={chaser:'Chaser',monee:'Monee',instinct:'Instinct'};
+ $('reports').innerHTML=`<div class="lbl">Rapports horaires au Bridge (depuis 08:00) ${tag('m',H.reports_ts,20)}</div>`+Object.entries(ags).map(([k,n])=>{const r=rep[k]||{};const miss=(r.missed||[]);return `<div class="ev"><b>${n}</b> — ${r.due?(r.due-miss.length)+'/'+r.due+' CR':'—'} ${miss.length?`<span class="r">manquants : ${E(miss.join(', '))}</span>`:'<span class="g">à jour</span>'}<div class="src">dernier fichier : ${r.last?E(r.last.name)+' · '+E(r.last.t.slice(11))+' HAE':'—'}</div></div>`}).join('')+
+  `<div class="src">DAB : ${(dz.limits||[]).map(E).join(' · ')}. Jetons : ${E((dz.tokens||[]).join(', '))}. ${E(dz.go||'')}</div>`+(fd._file?`<div class="src">Flux Monee : ${E(fd._file)} (${E(fd._mod||'')})${fd._err?' — illisible : '+E(fd._err):''}${fd.note?' · '+E(fd.note):''}</div>`:'<div class="src">Flux Monee : aucun HUD-FEED-monee.json au Bridge pour l’instant.</div>');
+ $('events').innerHTML='<div class="lbl">Dernières alertes (box)</div>'+(H.events||[]).map(e=>`<div class="ev"><span class="mono ${e.sev==='critical'?'r':e.sev==='warn'?'y':''}">${E(e.t.slice(5))}</span> · ${E(e.src)} — ${E(e.msg)}</div>`).join('');
+ $('warns').innerHTML=w.map(x=>`<div class="warnbox">${x}</div>`).join('');
+ $('foot').innerHTML=`Lecture seule : ce HUD ne signe rien et ne déplace aucun fonds. Sources : RPC Solana (soldes, positions Orca, frais en attente), Kraken (prix SOL ${f(px.SOL)} / BTC ${f(px.BTC,0)}), API Orca (frais 24 h des pools), defi_total.py, deposits.json, tests500_state.json, Jupiter Lend, dossier Bridge. Heures en HAE (Toronto). Agrégateur : hud2.py, toutes les 2 min. <a href="${OLD}">Ancien HUD</a>`;
+ $('rfi').textContent=lastRefresh?'page rechargée '+tT(lastRefresh):'—'}
+async function load(force){return sLoad(force)}
+setInterval(()=>{if(!document.hidden)load(false)},60000);load(false);
+</script></body></html>
