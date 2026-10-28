@@ -18,7 +18,7 @@ canvas{display:block;width:100%;height:100%}
 #intel h3{font-size:10px;letter-spacing:2px;color:rgb(0,245,255);margin:14px 0 8px;font-weight:bold}
 .row{font-size:11px;margin-bottom:8px;word-break:break-word;border-left:2px solid rgba(0,255,140,.3);padding-left:7px}
 .meta{font-size:10px;color:rgb(120,170,140)}
-.st-READ{color:rgb(255,230,109)}.st-WAKE{color:rgb(255,200,60)}.st-PENDING{color:rgb(255,150,40)}.st-PARTIAL{color:rgb(255,190,80)}.st-SENT{color:rgb(150,220,175)}
+.st-READ{color:rgb(255,230,109)}.st-REPLIED{color:rgb(57,255,20)}.st-WAKE{color:rgb(255,200,60)}.st-PENDING{color:rgb(255,150,40)}.st-PARTIAL{color:rgb(255,190,80)}.st-SENT{color:rgb(150,220,175)}
 a{color:rgb(0,245,255)}
 /* 2026-10-23 wake : NON LUS + carte de réveil */
 #unread{position:fixed;left:10px;bottom:38px;z-index:4;width:min(270px,58vw);max-height:42vh;overflow-y:auto;font-size:10px;background:rgba(0,12,7,.62);border:1px solid rgba(255,150,40,.45);border-radius:7px;padding:6px 7px;box-sizing:border-box}
@@ -37,6 +37,9 @@ a{color:rgb(0,245,255)}
 #card .acts button.wk{border-color:rgb(255,200,60);color:rgb(255,200,60);background:rgba(60,40,0,.55)}
 #card .acts button:disabled{opacity:.45;cursor:not-allowed}
 #card .res{margin-top:8px;font-weight:bold}
+/* 2026-10-28 ack : chaîne d'états SENT → READ → REPLIED + lien chat */
+.rcp{margin-top:6px;font-size:10px;line-height:1.5}.rcp b{letter-spacing:1px}.rcp .off{color:rgb(90,120,100)}
+#card .acts a.dl{border-color:rgb(57,255,20);color:rgb(57,255,20);background:rgba(0,40,10,.6)}
 /* 2026-10-24 reply : dock ↩ (bord droit, compact) + tiroir de réponse (fermé par défaut) */
 #dock{position:fixed;right:8px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;gap:5px;pointer-events:none}
 #dock button{pointer-events:auto;cursor:pointer;font:bold 10px ui-monospace,Menlo,monospace;letter-spacing:1px;padding:5px 7px;border-radius:6px;background:rgba(40,28,0,.55);border:1px solid rgba(255,200,60,.5);color:rgb(255,200,60);text-align:left}
@@ -151,9 +154,10 @@ const NODES=[
   {id:'Instinct',ab:'INSTINCT',role:'recherche · bêta',c:C.green,pos:{x:0,y:-150,z:240}},
   {id:'Frédéric',ab:'FRÉD',role:'GO · décisions',c:C.gold,pos:{x:0,y:140,z:-130}},
   {id:'Gardien',ab:'GARDIEN',role:'on-chain · kills',c:C.red,pos:{x:-330,y:150,z:-60},small:true},
+  {id:'Goldie',ab:'GOLDIE',role:'signaux XAU · Aurum',c:[255,184,28],pos:{x:210,y:-165,z:-210}},
 ];
 const NID={};NODES.forEach(n=>NID[n.id]=n);
-const AGENTS=['Chaser','Monee','Instinct'];
+const AGENTS=['Chaser','Monee','Instinct','Goldie'];const COUNCIL=['Chaser','Monee','Instinct'];   // 2026-10-28 ack : Goldie adressable, diffusion « Conseil » = 3
 const MCH='ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿ0123456789ABCDEF<>$+';
 const fmtT=new Intl.DateTimeFormat('fr-CA',{timeZone:'America/Toronto',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
 const fmtC=new Intl.DateTimeFormat('fr-CA',{timeZone:'America/Toronto',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
@@ -165,7 +169,7 @@ const S={feed:null,src:'',err:'',lastSync:0,seen:new Set(),readSeen:new Set(),fi
   unread:[],ucount:{},localWake:{},hits:[],uMin:innerWidth<600};
 NODES.forEach(n=>S.status[n.id]='IDLE');
 
-function targetsOf(e){ if(e.src==='chain')return['Frédéric']; let t=e.to.indexOf('Conseil')>=0?AGENTS.filter(a=>a!==e.from):e.to.slice(); return t.filter(x=>NID[x]&&x!==e.from);}
+function targetsOf(e){ if(e.src==='chain')return['Frédéric']; let t=e.to.indexOf('Conseil')>=0?COUNCIL.filter(a=>a!==e.from):e.to.slice(); return t.filter(x=>NID[x]&&x!==e.from);}
 function passFilter(e){ if(S.filter==='ALL')return true; return e.from===S.filter||targetsOf(e).indexOf(S.filter)>=0;}
 function bubbleText(e){ const tg=targetsOf(e); const to=e.to.indexOf('Conseil')>=0?'ALL':tg.map(x=>NID[x].ab).join('+')||'ALL';
   const s=(NID[e.from]?NID[e.from].ab:e.from.toUpperCase())+'→'+to+' · '+e.subject; return s.length>40?s.slice(0,39)+'…':s;}
@@ -179,14 +183,15 @@ async function poll(){
     S.feed=f; S.lastSync=Date.now();
     const evs=f.events.slice().sort((a,b)=>a.ts-b.ts);
     if(S.first){ S.first=false;
-      evs.forEach(e=>{S.seen.add(e.id);Object.keys(e.read_by||{}).forEach(r=>S.readSeen.add(e.id+'|'+r));});
+      evs.forEach(e=>{S.seen.add(e.id);Object.keys(e.read_by||{}).forEach(r=>S.readSeen.add(e.id+'|'+r));Object.entries(e.receipts||{}).forEach(([r,v])=>{if(v.state==='REPLIED')S.readSeen.add(e.id+'|'+r+'|R')});});
       // intro : rejoue en vrai les 3 derniers messages réels (heures réelles affichées), puis attend le direct
       evs.filter(e=>e.src==='bridge').slice(-3).forEach(e=>S.queue.push({e,intro:true}));
       setStatuses();
     }else{
       for(const e of evs){
-        if(!S.seen.has(e.id)){S.seen.add(e.id);Object.keys(e.read_by||{}).forEach(r=>S.readSeen.add(e.id+'|'+r));(S.mode==='LIVE'?S.queue:S.deferred).push({e,fresh:true});continue}
+        if(!S.seen.has(e.id)){S.seen.add(e.id);Object.keys(e.read_by||{}).forEach(r=>S.readSeen.add(e.id+'|'+r));Object.entries(e.receipts||{}).forEach(([r,v])=>{if(v.state==='REPLIED')S.readSeen.add(e.id+'|'+r+'|R')});(S.mode==='LIVE'?S.queue:S.deferred).push({e,fresh:true});continue}
         for(const r of Object.keys(e.read_by||{})){const k=e.id+'|'+r;if(!S.readSeen.has(k)){S.readSeen.add(k);(S.mode==='LIVE'?S.queue:S.deferred).push({ack:true,e,reader:r});}}
+        for(const [r,v] of Object.entries(e.receipts||{})){const k=e.id+'|'+r+'|R';if(v.state==='REPLIED'&&!S.readSeen.has(k)){S.readSeen.add(k);(S.mode==='LIVE'?S.queue:S.deferred).push({ack:true,replied:true,e,reader:r});}}
       }
       if(S.queue.length>12)S.queue=S.queue.slice(-12);
     }
@@ -223,13 +228,13 @@ function renderIntel(){
   for(const e of evs){
     const rb=Object.entries(e.read_by||{}).map(([k,v])=>k+' '+v.t).join(', ');
     h+='<div class="row"><span class="meta">'+esc(e.t.slice(5))+'</span> <b>'+esc(e.from)+'</b> → '+esc(e.to.join(', '))+' · '+esc(e.type)+' · '+esc(e.subject)+
-      '<div class="meta"><span class="st-'+esc(e.status)+'">'+esc(e.status)+'</span>'+(rb?' · LU : '+esc(rb):'')+((e.pending||[]).length?' · attend : '+esc(e.pending.join(', ')):'')+' · heure : '+esc(e.prec||'')+' · '+esc(e.label||'')+'</div>'+
+      '<div class="meta"><span class="st-'+esc(e.status)+'">'+esc(e.status)+'</span>'+(e.receipts&&Object.keys(e.receipts).length?' · '+Object.entries(e.receipts).map(([k,v])=>esc(k)+' <span class="st-'+esc(v.state)+'">'+esc(v.state)+'</span>'+(v.read_t?' lu '+esc(v.read_t):'')+(v.replied_t?' rép. '+esc(v.replied_t):'')).join(', '):(rb?' · LU : '+esc(rb):''))+((e.pending||[]).length?' · attend : '+esc(e.pending.join(', ')):'')+' · heure : '+esc(e.prec||'')+' · '+esc(e.label||'')+'</div>'+
       (e.file?'<div class="meta">'+esc(e.file)+'</div>':(e.detail?'<div class="meta">'+esc(e.detail)+'</div>':''))+'</div>';
   }
   b.innerHTML=h;
 }
 // ===== 2026-10-23 wake : liste NON LUS (coin de scène + INTEL) et carte de réveil =====
-const GROUPS=['Chaser','Monee','Instinct','Frédéric'];
+const GROUPS=['Chaser','Monee','Instinct','Goldie','Frédéric'];
 function age(ms){const m=Math.max(0,Math.round((Date.now()-ms)/60000));return m<60?m+' min':Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')}
 function wakeLbl(u){const l=S.localWake[u.id];return l?l.label:(u.wake?u.wake.label+' '+u.wake.t:'')}
 function unreadHTML(list,max){let h='';
@@ -239,25 +244,31 @@ function unreadHTML(list,max){let h='';
   return h||'<div class="meta">aucun fichier non lu</div>'}
 function renderUnread(){const el=document.getElementById('unread');const n=S.unread.length;
   el.className=S.uMin?'min':'';el.innerHTML='<div class="hd" id="uHd">◉ NON LUS · '+n+' '+(S.uMin?'▸':'▾')+'</div><div class="lst">'+unreadHTML(S.unread,6)+'</div>';}
-document.addEventListener('click',ev=>{const t=ev.target.closest&&ev.target.closest('[data-u]');if(t){openCard(t.getAttribute('data-u'));return}
+document.addEventListener('click',ev=>{const t=ev.target.closest&&ev.target.closest('[data-u]');if(t){openCard(t.getAttribute('data-u'),true);return}
   const m=ev.target.closest&&ev.target.closest('[data-mp]');if(m){openMP(m.getAttribute('data-mp'));return}
   if(ev.target.id==='uHd'){S.uMin=!S.uMin;renderUnread()}});
 document.getElementById('cardX').onclick=()=>{document.getElementById('card').classList.remove('on');S.cardId=null};
-function openCard(uid){const u=S.unread.find(x=>x.id===uid)||(S.cardU&&S.cardU.id===uid?S.cardU:null);if(!u)return;S.cardId=uid;S.cardU=u;renderCard();document.getElementById('card').classList.add('on')}
+// 2026-10-28 ack : un clic sur un dépôt NON LU = carte + ⚡ réveil immédiat (si tunnel joignable, pas déjà réveillé < 2 min, destinataire réveillable)
+function openCard(uid,auto){const u=S.unread.find(x=>x.id===uid)||(S.cardU&&S.cardU.id===uid?S.cardU:null);if(!u)return;S.cardId=uid;S.cardU=u;renderCard();document.getElementById('card').classList.add('on');
+  if(auto&&u.wakeable&&wakeURL()&&!(S.localWake[u.id]&&(S.localWake[u.id].busy||Date.now()-(S.localWake[u.id].at||0)<120000)))doWake(u)}
+function rcpHTML(e,who){const r=e&&e.receipts&&e.receipts[who];if(!r)return'';const on=(k,txt)=>'<span class="st-'+k+'"><b>'+k+'</b> '+esc(txt)+'</span>',off=k=>'<span class="off"><b>'+k+'</b> —</span>';
+  return '<div class="rcp">'+on('SENT',r.sent_t)+' → '+(r.read_t?on('READ',r.read_t+(r.read_prec&&r.read_prec.indexOf('implicite')>=0?' (implicite)':r.read_prec&&r.read_prec.indexOf('seconde')>=0?' (ACK)':' (ACK, Drive)')):off('READ'))+' → '+(r.replied_t?on('REPLIED',r.replied_t):off('REPLIED'))+(r.read_lag_s!=null?' <span class="meta">· lu en '+esc(age(Date.now()-r.read_lag_s*1000))+'</span>':'')+'</div>'}
 function renderCard(){const u=S.cardU;if(!u)return;const url=wakeURL(),w=wakeLbl(u),busy=S.localWake[u.id]&&S.localWake[u.id].busy;
   let h='<div class="t">'+esc(u.file)+'</div><div>'+esc(u.from)+' → <b>'+esc(u.to)+'</b> · '+esc(u.type)+'</div><div class="meta">déposé '+esc(u.t)+' HAE · il y a '+esc(age(u.ts))+' · '+(u.measurable?'NON LU (aucun fichier de '+esc(u.to)+' ne le cite)':'lecture non mesurable')+'</div>';
+  const ev0=S.feed&&S.feed.events.find(x=>x.id===u.ev);h+=rcpHTML(ev0,u.to);
   h+='<div class="acts"><a href="https://drive.google.com/file/d/'+encodeURIComponent(u.drive_id)+'/view" target="_blank" rel="noopener noreferrer">OPEN ↗</a>';
+  const dlk=S.feed&&S.feed.agent_links&&S.feed.agent_links[u.to];if(dlk&&/^grokbot:\/\/app\/v1\/agent\?id=[0-9a-f-]{36}$/.test(dlk))h+='<a class="dl" href="'+esc(dlk)+'" title="ouvre le chat (app Grok Bot seulement)">💬 CHAT '+esc(u.to.toUpperCase())+'</a>';
   if(u.wakeable)h+='<button class="wk" id="wkBtn"'+(url&&!busy?'':' disabled')+'>⚡ RÉVEILLER '+esc(u.to.toUpperCase())+'</button>';
-  const rpTo=AGENTS.indexOf(u.to)>=0?u.to:(AGENTS.indexOf(u.from)>=0?u.from:null);
+  const rpTo=COUNCIL.indexOf(u.to)>=0?u.to:(COUNCIL.indexOf(u.from)>=0?u.from:null);
   if(rpTo)h+='<button class="rp" id="rpBtn" data-rpto="'+esc(rpTo)+'">↩ RÉPONDRE '+esc(rpTo.toUpperCase())+'</button>';
   h+='</div>';
   if(u.wakeable&&!url)h+='<div class="res" style="color:rgb(255,150,40)">réveil indisponible hors tunnel</div>';
   if(w)h+='<div class="res" style="color:rgb(255,230,109)">◈ '+esc(w)+'</div>';
-  if(u.to==='Chaser'||u.to==='Monee'||u.to==='Instinct')h+='<div class="meta" style="margin-top:6px">'+(u.to==='Chaser'?'Chaser : webhook de sa routine.':esc(u.to)+' : fichier WAKE-… relayé sur le Bridge par Chaser.')+' LU ✓ quand '+esc(u.to)+' dépose un ACK ou une REPONSE qui cite ce fichier.</div>';
+  if(AGENTS.indexOf(u.to)>=0)h+='<div class="meta" style="margin-top:6px">'+(u.to==='Chaser'?'Chaser : webhook de sa routine.':u.to==='Goldie'?'Goldie : relais Chaser (SendToAgent) + WAKE-… sur le Bridge.':esc(u.to)+' : fichier WAKE-… relayé sur le Bridge par Chaser.')+' READ ✓ quand '+esc(u.to)+' dépose ACK-…-'+esc(u.to.toLowerCase())+'.md (« Lu à » réel) · REPLIED ✓ quand sa REPONSE cite ce fichier (PROTOCOLE-ACK v1).'+(dlk?' 💬 = app Grok Bot seulement.':'')+'</div>';
   document.getElementById('cardBody').innerHTML=h;const b=document.getElementById('wkBtn');if(b)b.onclick=()=>doWake(u);
   const rb=document.getElementById('rpBtn');if(rb)rb.onclick=()=>openReply(rb.getAttribute('data-rpto'),u.file)}
-function wl(j,r){return j.status==='queued_relay'&&j.webhook?'WAKE EN FILE (webhook Chaser indisponible)':(WL[j.status]||('HTTP '+(r?r.status:'?')))}
-const WL={sent:'WAKE SENT',queued_relay:'WAKE PENDING (relais)',needs_webhook:'Webhook Chaser non configuré',rate_limited:'déjà réveillé (< 2 min)',error:'WAKE ÉCHEC',unknown_file:'fichier inconnu du fil'};
+function wl(j,r){if(j.status==='queued_relay'&&j.chaser_relay==='sent')return WL.relay_sent;return j.status==='queued_relay'&&j.webhook?'WAKE EN FILE (webhook Chaser indisponible)':(WL[j.status]||('HTTP '+(r?r.status:'?')))}
+const WL={sent:'WAKE SENT',queued_relay:'WAKE PENDING (relais)',relay_sent:'WAKE SENT (relais Chaser réveillé)',needs_webhook:'Webhook Chaser non configuré',rate_limited:'déjà réveillé (< 2 min)',error:'WAKE ÉCHEC',unknown_file:'fichier inconnu du fil'};
 async function doWake(u){const url=wakeURL();if(!url)return;S.localWake[u.id]={label:'⚡ envoi…',busy:true};renderCard();
   const now=performance.now();S.packets.push({from:'Frédéric',to:u.to,kind:'WAKE',p:0,speed:.016,ev:{subject:u.subject},wake:true});S.flash['Frédéric']=now;
   S.bubbles.push({text:('FRÉD→'+NID[u.to].ab+' · ⚡ WAKE '+u.subject).slice(0,40),sub:u.file.slice(0,44),at:'Frédéric',born:now,c:C.gold});if(S.bubbles.length>3)S.bubbles.shift();
@@ -265,7 +276,7 @@ async function doWake(u){const url=wakeURL();if(!url)return;S.localWake[u.id]={l
     const j=await r.json().catch(()=>({}));lbl=wl(j,r)+(j.retry_s?' · '+j.retry_s+' s':'');if(j.id)S.seen.add('wake:'+j.id);
     S.wakePop={to:u.to,text:WL[j.status]||'WAKE ?',c:j.status==='sent'?C.gold:j.status==='queued_relay'?C.orange:C.red};
   }catch(e){lbl='réveil indisponible (tunnel injoignable)';S.wakePop={to:u.to,text:'WAKE ÉCHEC',c:C.red}}
-  S.localWake[u.id]={label:lbl+' · '+hm(Date.now()),busy:false};renderCard();renderUnread();renderIntel();if(MP.who)renderMP();setTimeout(poll,2500)}
+  S.localWake[u.id]={label:lbl+' · '+hm(Date.now()),busy:false,at:Date.now()};renderCard();renderUnread();renderIntel();if(MP.who)renderMP();setTimeout(poll,2500)}
 
 // ===== 2026-10-24 reply : ↩ RÉPONDRE (par membre) / ↩ RÉPONDRE À TOUS → POST api/reply → REPONSE-FRED-…md =====
 const RP={to:null,busy:false,ref:null};const RMAX=2000;
@@ -286,7 +297,7 @@ function updCnt(){const n=document.getElementById('drTxt').value.length;const c=
 async function sendReply(){const url=replyURL(),ta=document.getElementById('drTxt'),res=document.getElementById('drRes');if(!url||RP.busy||!RP.to)return;
   const text=ta.value.trim();if(!text){res.style.color='rgb(255,150,40)';res.textContent='message vide';return}
   if(text.length>RMAX){res.style.color='rgb(255,70,70)';res.textContent='trop long : '+text.length+' / '+RMAX;return}
-  const to=RP.to,rc=to==='tous'?AGENTS.slice():[to];RP.busy=true;renderDrawer();res.style.color='rgb(255,200,60)';res.textContent='↩ envoi…';
+  const to=RP.to,rc=to==='tous'?COUNCIL.slice():[to];RP.busy=true;renderDrawer();res.style.color='rgb(255,200,60)';res.textContent='↩ envoi…';
   const now=performance.now();S.flash['Frédéric']=now;S.status['Frédéric']='↩ RÉPONSE '+hm(Date.now());
   rc.forEach(m=>S.packets.push({from:'Frédéric',to:m,kind:'FRÉD',p:0,speed:.0125,fred:true,ev:{subject:text.slice(0,30)}}));
   S.bubbles.push({text:('FRÉD→'+(to==='tous'?'TOUS':NID[to].ab)+' · ↩ '+text.replace(/\s+/g,' ')).slice(0,40),sub:'● SENT · '+hm(Date.now())+' HAE · en attente d\'ACK',at:'Frédéric',born:now,c:C.gold});if(S.bubbles.length>3)S.bubbles.shift();
@@ -311,7 +322,8 @@ function memberFiles(who){if(!S.feed)return[];const by={};
   for(const e of S.feed.events){if(!e.drive_id)continue;const mine=e.from===who,toMe=targetsOf(e).indexOf(who)>=0;if(!mine&&!toMe)continue;
     const k=e.drive_id;if(!by[k]||by[k].ts<e.ts)by[k]=e}
   return Object.values(by).sort((a,b)=>b.ts-a.ts)}
-function mStat(e,who){if(e.from===who)return{s:e.status||'SENT',rel:'auteur → '+e.to.join(', ')};
+function mStat(e,who){if(e.from===who){const rc=e.receipts||{},ks=Object.keys(rc);return{s:e.status||'SENT',rel:'auteur → '+e.to.join(', '),extra:ks.length?ks.map(k=>k+' '+rc[k].state+(rc[k].replied_t?' '+rc[k].replied_t:rc[k].read_t?' '+rc[k].read_t:'')).join(' · '):''}}
+  const rc=(e.receipts||{})[who];if(rc&&rc.state==='REPLIED')return{s:'REPLIED',rel:'de '+e.from,extra:'lu '+rc.read_t+' · répondu '+rc.replied_t};if(rc&&rc.state==='READ')return{s:'READ',rel:'de '+e.from,extra:'lu '+rc.read_t+' · attend REPLY'};
   const rd=(e.read_by||{})[who];if(rd)return{s:'READ',rel:'de '+e.from,extra:'lu '+rd.t};
   if((e.pending||[]).indexOf(who)>=0)return{s:'PENDING',rel:'de '+e.from};return{s:e.status||'SENT',rel:'de '+e.from}}
 function mUnread(who){return S.unread.filter(u=>u.to===who)}
@@ -321,7 +333,8 @@ function renderMP(){const who=MP.who;if(!who)return;const n=NID[who],files=membe
   const wurl=wakeURL(),wk=un.filter(u=>u.wakeable&&u.measurable).sort((a,b)=>b.ts-a.ts)[0],busy=wk&&S.localWake[wk.id]&&S.localWake[wk.id].busy;
   let h='<div class="t" style="color:'+col(n.c,1)+'">▤ '+esc(who.toUpperCase())+' · messages Bridge</div>';
   h+='<div class="meta">'+files.length+' fichier(s) · <span style="color:rgb(255,150,40)">'+un.length+' non lu(s)</span> · auteur ou destinataire · fenêtre '+esc(S.feed?S.feed.window_h:'?')+' h · heures HAE (Toronto)</div>';
-  h+='<div class="acts"><button class="rp" id="mpRp">↩ RÉPONDRE '+(who==='Frédéric'?'À TOUS':esc(who.toUpperCase()))+'</button>';
+  h+='<div class="acts">'+(who==='Goldie'?'':'<button class="rp" id="mpRp">↩ RÉPONDRE '+(who==='Frédéric'?'À TOUS':esc(who.toUpperCase()))+'</button>');
+  const dlk=S.feed&&S.feed.agent_links&&S.feed.agent_links[who];if(dlk&&/^grokbot:\/\/app\/v1\/agent\?id=[0-9a-f-]{36}$/.test(dlk))h+='<a class="dl" href="'+esc(dlk)+'">💬 CHAT '+esc(who.toUpperCase())+'</a>';
   if(AGENTS.indexOf(who)>=0)h+='<button class="wk" id="mpWk"'+(wk&&wurl&&!busy?'':' disabled')+' title="'+esc(wk?wk.file:'aucun non lu')+'">⚡ RÉVEILLER '+esc(who.toUpperCase())+(wk?'':' (rien à lire)')+'</button>';
   h+='<a href="'+BRIDGE_URL+'" target="_blank" rel="noopener noreferrer">📁 Ouvrir le dossier Bridge ↗</a></div>';
   if(wk&&!wurl)h+='<div class="meta" style="color:rgb(255,150,40)">⚡ réveil indisponible hors tunnel (lecture Drive OK)</div>';
@@ -334,7 +347,7 @@ function renderMP(){const who=MP.who;if(!who)return;const n=NID[who],files=membe
   if(!files.length)h+='<div class="meta" style="margin-top:6px">aucun fichier Bridge dans la fenêtre du fil · voir le dossier ↗</div>';
   if(files.length>MP.show)h+='<div class="more" id="mpMore">+ '+(files.length-MP.show)+' plus ancien(s)</div>';
   document.getElementById('mpBody').innerHTML=h;
-  document.getElementById('mpRp').onclick=()=>openReply(who==='Frédéric'?'tous':who);
+  const mr=document.getElementById('mpRp');if(mr)mr.onclick=()=>openReply(who==='Frédéric'?'tous':who);
   const wb=document.getElementById('mpWk');if(wb&&wk)wb.onclick=()=>doWake(wk);
   const mb=document.getElementById('mpMore');if(mb)mb.onclick=()=>{MP.show+=30;renderMP()}}
 document.getElementById('mpX').onclick=closeMP;
@@ -344,11 +357,11 @@ document.getElementById('mpX').onclick=closeMP;
 const BRIDGE_POS={x:330,y:160,z:-60};const RD={};S.trips=[];
 function tapStep(who){const rto=who==='Frédéric'?'tous':who;if(RP.to===rto)return 2;if(MP.who===who&&who!=='Frédéric')return 1;return 0}
 function tapHint(who){const st=tapStep(who);if(who==='Frédéric')return st===2?'▸ tap = fermer':'tap = ↩ répondre à tous';
-  if(RD[who]&&RD[who].busy)return'◈ LECTURE…';return st===0?'1× lire · 2× répondre':st===1?'▸ 2× = ↩ répondre':'▸ 3× = fermer'}
+  if(RD[who]&&RD[who].busy)return'◈ LECTURE…';if(who==='Goldie')return st===0?'1× lire (réveil)':'▸ 2× = fermer';return st===0?'1× lire · 2× répondre':st===1?'▸ 2× = ↩ répondre':'▸ 3× = fermer'}
 function avatarTap(who){const st=tapStep(who);
   if(who==='Frédéric'){if(st===2){closeReply();closeMP()}else{openMP('Frédéric');openReply('tous')}return}
   if(st===0){if(RP.to)closeReply();openMP(who);readFlow(who)}
-  else if(st===1)openReply(who);
+  else if(st===1){if(who==='Goldie'){closeMP()}else openReply(who)}
   else{closeReply();closeMP()}}
 async function readFlow(who){if(RD[who]&&RD[who].busy)return;const url=wakeURL(),now=performance.now();
   const un=S.unread.filter(u=>u.to===who&&u.wakeable&&u.measurable).sort((a,b)=>b.ts-a.ts).slice(0,6);
@@ -378,7 +391,7 @@ function drawTrips(pr,now){const D=3400;S.trips=S.trips.filter(t=>{const age=now
     ctx.font='bold 11px monospace';ctx.fillStyle=col(C.gold,.6+.4*Math.sin(now*.012));ctx.fillText(age>=1100&&age<2300?'LECTURE…':(age<1100?'→ BRIDGE':'← retour'),x,y-r-8);ctx.restore()}}
 
 // ===== UI =====
-const FILTERS=['ALL','Chaser','Monee','Instinct','Frédéric','Gardien'];
+const FILTERS=['ALL','Chaser','Monee','Instinct','Goldie','Frédéric','Gardien'];
 const fw=document.getElementById('filters');
 FILTERS.forEach(fid=>{const bt=document.createElement('button');bt.textContent=fid==='ALL'?'ALL':(NID[fid]?NID[fid].ab:fid);if(fid==='ALL')bt.className='on';
   bt.onclick=()=>{S.filter=fid;[...fw.children].forEach(x=>x.classList.remove('on'));bt.classList.add('on');renderIntel()};fw.appendChild(bt)});
@@ -459,8 +472,8 @@ function drawChrome(now){ctx.save();ctx.strokeStyle=col([0,255,140],.5);ctx.line
 function fire(it,now){
   const e=it.e;
   if(it.ack){ // un destinataire vient de citer ce message → paquet READ ✓ vers l'expéditeur
-    if(!NID[it.reader]||!NID[e.from])return 800; S.packets.push({from:it.reader,to:e.from,kind:'READ',p:0,speed:.012,read:true,ev:e});
-    S.bubbles.push({text:(NID[it.reader].ab+'→'+NID[e.from].ab+' · READ ✓ '+e.subject).slice(0,40),at:it.reader,born:now,c:C.yel});if(S.bubbles.length>3)S.bubbles.shift();
+    if(!NID[it.reader]||!NID[e.from])return 800; const RK=it.replied?'REPLY':'READ';S.packets.push({from:it.reader,to:e.from,kind:RK,p:0,speed:.012,read:true,replied:!!it.replied,ev:e});
+    S.bubbles.push({text:(NID[it.reader].ab+'→'+NID[e.from].ab+' · '+(it.replied?'REPLIED ✓ ':'READ ✓ ')+e.subject).slice(0,40),at:it.reader,born:now,c:it.replied?C.green:C.yel});if(S.bubbles.length>3)S.bubbles.shift();
     S.flash[it.reader]=now;return 2200}
   if(!passFilter(e))return 30;
   const from=NID[e.from]?e.from:'Gardien'; S.lastEv=it; S.flash[from]=now;
@@ -475,7 +488,7 @@ function frame(now){const dt=Math.min(40,now-last);last=now;S.hits=[];ctx.fillSt
   const pr={};NODES.forEach(n=>pr[n.id]=project(n.pos,now));pr.BRIDGE=project(BRIDGE_POS,now);drawLinks(pr,now);drawBridge(pr.BRIDGE,now);
   [...NODES].sort((a,b)=>pr[b.id].z-pr[a.id].z).forEach(n=>drawNode(n,pr[n.id],now));
   const keep=[];for(const pk of S.packets){pk.p+=pk.speed*(dt/16);if(pk.p<1){keep.push(pk);drawPacket(pk,pr)}else{S.flash[pk.to]=now;
-    if(pk.read){S.pops.push({at:pk.to,text:'READ ✓',born:now,c:C.yel})}
+    if(pk.read){S.pops.push({at:pk.to,text:pk.replied?'REPLIED ✓':'READ ✓',born:now,c:pk.replied?C.green:C.yel})}
     else if(pk.fred){const fp=S.fredPop||{c:C.gold,text:'↩ SENT'};S.pops.push({at:pk.to,text:fp.text,born:now,c:fp.c});S.status[pk.to]=fp.text+' · attend ACK'}
     else if(pk.wake){const wp=S.wakePop&&S.wakePop.to===pk.to?S.wakePop:null;S.pops.push({at:pk.to,text:wp?wp.text:(pk.ev&&pk.ev.wake_label)||'WAKE SENT',born:now,c:wp?wp.c:C.gold});S.status[pk.to]='⚡ '+(wp?wp.text:'WAKE');S.wakePop=null}
     else if(pk.readAt){S.pops.push({at:pk.to,text:'READ ✓ '+pk.readAt,born:now,c:C.yel});S.status[pk.to]='READ'}
