@@ -501,7 +501,7 @@ function frame(now){const dt=Math.min(40,now-last);last=now;S.hits=[];ctx.fillSt
   requestAnimationFrame(frame)}
 cv.addEventListener('click',ev=>{const r=cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;
   for(let i=S.hits.length-1;i>=0;i--){const h=S.hits[i];const inR=h.x0!=null?(x>=h.x0&&x<=h.x1&&y>=h.y0&&y<=h.y1):((x-h.x)**2+(y-h.y)**2<=h.r*h.r);if(!inR)continue;
-    if(h.uid){openCard(h.uid);return}if(h.mnode){avatarTap(h.mnode);return}}});
+    if(h.uid){openCard(h.uid,true);return}if(h.mnode){avatarTap(h.mnode);return}}});
 setInterval(()=>{renderUnread();if(S.cardId)renderCard()},30000);
 requestAnimationFrame(frame);
 poll();setInterval(()=>{if(S.mode==='LIVE'||true)poll()},POLL_MS);
